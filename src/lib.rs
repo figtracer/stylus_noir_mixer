@@ -5,6 +5,7 @@
 extern crate alloc;
 
 mod incremental_merkle_tree;
+mod poseidon2;
 use crate::incremental_merkle_tree::IncrementalMerkleTree;
 
 use alloc::vec::Vec;
@@ -18,7 +19,7 @@ const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 /* contract storage */
 sol_storage! {
-    #[entrypoint]
+    #[entrypoint] 
     pub struct Mixer {
         #[borrow]
         IncrementalMerkleTree imt;
