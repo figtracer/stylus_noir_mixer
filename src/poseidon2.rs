@@ -1,6 +1,5 @@
 #![allow(clippy::needless_range_loop)]
 
-
 use ark_bn254::Fr;
 use ark_ff::{BigInt, PrimeField, Field};
 use stylus_sdk::alloy_primitives::U256;
@@ -27,7 +26,6 @@ pub struct Sponge {
 fn fr_from_hex(hex: &str) -> Fr {
     let s = hex.strip_prefix("0x").unwrap_or(hex);
     let mut bytes = [0u8; 32];
-    // parse into big-endian bytes
     let mut bi = 31usize;
     let mut i = s.len();
     while i > 0 {
@@ -312,7 +310,6 @@ fn squeeze(sp: &mut Sponge) -> Fr {
 }
 
 fn iv_from_len(len: usize) -> Fr {
-    // Field(Type.wrap(len << 64))
     let iv_u256 = U256::from(len as u128) << 64;
     fr_from_u256(iv_u256)
 }
@@ -324,7 +321,6 @@ fn fr_from_u256(x: U256) -> Fr {
 
 fn u256_from_fr(x: Fr) -> U256 {
     let bi: BigInt<4> = x.into_bigint();
-    // Convert to big-endian 32 bytes
     let limbs = bi.0; // [u64; 4], little-endian limbs
     let mut bytes = [0u8; 32];
     for i in 0..4 {
