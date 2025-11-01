@@ -5,7 +5,7 @@
 extern crate alloc;
 
 mod incremental_merkle_tree;
-mod poseidon2;
+pub mod poseidon2;
 use crate::incremental_merkle_tree::IncrementalMerkleTree;
 
 use alloc::vec::Vec;
@@ -51,11 +51,8 @@ impl Mixer {
 
         self.commitments.insert(commitment, true);
 
-        let inserted_index: U256 = self.imt.insert(commitment);
+        // let inserted_index: U256 = self.imt.insert(commitment);
 
-        log(self.vm(), CommitmentInserted { index: inserted_index });    
+        // log(self.vm(), CommitmentInserted { index: inserted_index });    
     }
 }
-
-#[cfg(test)]
-mod test {}

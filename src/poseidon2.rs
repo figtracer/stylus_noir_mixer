@@ -320,12 +320,11 @@ fn fr_from_u256(x: U256) -> Fr {
 }
 
 fn u256_from_fr(x: Fr) -> U256 {
-    let bi: BigInt<4> = x.into_bigint();
-    let limbs = bi.0; // [u64; 4], little-endian limbs
+    let bi: BigInt<4> = x.into_bigint();        /* little-endian limbs: [l0, l1, l2, l3] */
+    let limbs = bi.0;
     let mut bytes = [0u8; 32];
-    for i in 0..4 {
-        let limb = limbs[i].to_be_bytes();
-        bytes[i * 8..(i + 1) * 8].copy_from_slice(&limb);
+    for (i, limb) in limbs.iter().rev().enumerate() {
+        bytes[i*8..(i+1)*8].copy_from_slice(&limb.to_be_bytes());
     }
     U256::from_be_bytes(bytes)
 }
