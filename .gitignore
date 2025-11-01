@@ -4,3 +4,4 @@
 /circuits/.cargo
 Cargo.lock
 /target
+.vscode
