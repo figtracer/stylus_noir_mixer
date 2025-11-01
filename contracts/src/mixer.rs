@@ -11,7 +11,7 @@ pub mod imt;
 
 use crate::imt::IncrementalMerkleTree;
 use stylus_sdk::{
-                 alloy_primitives::{U256, uint},
+                 alloy_primitives::{U256, U32, uint},
                  alloy_sol_types::sol,
                  prelude::*,
                  storage::{StorageBool, StorageGuard},
@@ -30,12 +30,18 @@ sol_storage! {
 
 /* events */
 sol! {
-    event CommitmentInserted(uint256 indexed index);
+    event CommitmentInserted(uint32 indexed index);
 }
 
 #[public]
 #[inherit(IncrementalMerkleTree)]
 impl Mixer {
+    /* initializes the imt with the given depth */
+    #[constructor]
+    pub fn init(&mut self, depth: U32) {
+        self.imt.init(depth);
+    }
+
     #[payable]
     pub fn deposit(&mut self, commitment: alloy_primitives::FixedBytes<32>) {
         /* check if commitment is already present */
@@ -52,8 +58,10 @@ impl Mixer {
 
         self.commitments.insert(commitment, true);
 
-        // let inserted_index: U256 = self.imt.insert(commitment);
+        let inserted_index: U32 = self.imt.insert(commitment);
 
-        // log(self.vm(), CommitmentInserted { index: inserted_index });    
+        /* convert the inserted index to a u32 */
+        let idx_u32: u32 = u32::from_be_bytes(inserted_index.to_be_bytes::<4>());
+        log(self.vm(), CommitmentInserted { index: idx_u32 });    
     }
 }

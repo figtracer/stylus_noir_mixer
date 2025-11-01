@@ -1,2 +1,6 @@
-/target
+/contracts/target
 .env
+/contracts/.cargo
+/circuits/.cargo
+Cargo.lock
+/target

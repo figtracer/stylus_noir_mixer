@@ -27,7 +27,7 @@ mini-alloc = ["stylus-sdk/mini-alloc"]
 
 [lib]
 name = "mixer"
-path = "src/lib.rs"
+path = "src/mixer.rs"
 crate-type = ["lib", "cdylib"]
 
 
