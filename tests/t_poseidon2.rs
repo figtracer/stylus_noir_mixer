@@ -1,5 +1,5 @@
 #[cfg(test)]
-use stylus_noir_mixer::poseidon2::hash_2;
+use mixer::poseidon2::hash_2;
 use stylus_sdk::alloy_primitives::U256;
 use hex as _;
 
@@ -15,7 +15,7 @@ fn u256(hex: &str) -> U256 {
 }
 
 /* credits: https://github.com/zemse/poseidon2-evm/blob/main/src/Poseidon2Lib.sol 
-*  The hashed values are taken from the solidity implementation of Poseidon2.
+*  the hashed values are taken from the solidity implementation of Poseidon2
 */
 
 #[test]
@@ -27,7 +27,8 @@ fn matches_solidity_poseidon2_hash2() {
         ("0x2a", "0x0", "0x1e7981f857394b926eee0742ad9104aa612ffe6873522a4eccaab935b2ff3c96"),
         ("0x0", "0x2a", "0x1b1fd004aab577fc6cd7c3bb807079273b0ba27c6b0a168e5a8106dafbf8a249"),
         ("0x7f3b7", "0x5f4b57b21c75007b", "0x10953cfc12d9e84c908ad271373689e4146d80e103e9ab429fdb883e03c297d4"),
-        ("0x6d026db998e839b5967c2", "0x41d073d77ab9c4d910944", "0x1c3360753c23bff6705c50bdb90284eac323ff2b4985483213b14eb755740d64")
+        ("0x6d026db998e839b5967c2", "0x41d073d77ab9c4d910944", "0x1c3360753c23bff6705c50bdb90284eac323ff2b4985483213b14eb755740d64"),
+        ("0x2fd1c265352ef9", "0x157d9dd78937101", "0x1025ecca5d719d1bb74274700e33f532b231bd08bbdba184da61a0101c15933a")
     ];
 
     for (x_hex, y_hex, h_hex) in vectors {

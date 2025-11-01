@@ -1,5 +1,5 @@
 [package]
-name = "stylus_noir_mixer"
+name = "mixer"
 version = "0.1.11"
 edition = "2024"
 
@@ -26,8 +26,8 @@ debug = ["stylus-sdk/debug"]
 mini-alloc = ["stylus-sdk/mini-alloc"]
 
 [lib]
-name = "stylus_noir_mixer"
-path = "src/mixer.rs"
+name = "mixer"
+path = "src/lib.rs"
 crate-type = ["lib", "cdylib"]
 
 

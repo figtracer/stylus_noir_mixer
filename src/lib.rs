@@ -3,21 +3,22 @@
 
 #[macro_use]
 extern crate alloc;
-
-mod incremental_merkle_tree;
-pub mod poseidon2;
-use crate::incremental_merkle_tree::IncrementalMerkleTree;
-
 use alloc::vec::Vec;
-use stylus_sdk::{alloy_primitives::U256};
-use stylus_sdk::{alloy_primitives::uint};
-use stylus_sdk::{alloy_sol_types::sol};
-use stylus_sdk::prelude::*;
-use stylus_sdk::storage::{StorageBool, StorageGuard};
+
+/* modules and imports */
+pub mod poseidon2;
+pub mod imt;
+
+use crate::imt::IncrementalMerkleTree;
+use stylus_sdk::{
+                 alloy_primitives::{U256, uint},
+                 alloy_sol_types::sol,
+                 prelude::*,
+                 storage::{StorageBool, StorageGuard},
+                };
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
-/* contract storage */
 sol_storage! {
     #[entrypoint] 
     pub struct Mixer {
