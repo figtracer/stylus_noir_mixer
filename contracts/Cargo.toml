@@ -20,14 +20,13 @@ stylus-sdk = { version = "0.9.0", features = ["stylus-test"] }
 dotenv = "0.15.0"
 
 [features]
-default = ["mini-alloc"]
 export-abi = ["stylus-sdk/export-abi"]
-debug = ["stylus-sdk/debug"]
-mini-alloc = ["stylus-sdk/mini-alloc"]
+
+[[bin]]
+name = "mixer"
+path = "src/main.rs"
 
 [lib]
-name = "mixer"
-path = "src/mixer.rs"
 crate-type = ["lib", "cdylib"]
 
 
@@ -39,4 +38,4 @@ panic = "abort"
 
 # If you need to reduce the binary size, it is advisable to try other
 # optimization levels, such as "s" and "z"
-opt-level = 3
+opt-level = "z"

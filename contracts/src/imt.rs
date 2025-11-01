@@ -1,8 +1,11 @@
 use alloc::vec::Vec;
 use stylus_sdk::prelude::*;
-use stylus_sdk::alloy_primitives::{FixedBytes, U256, U32};
+use stylus_sdk::{
+	             alloy_primitives::{FixedBytes, U256, U32},
+	            };
 
 use crate::poseidon2::hash_2;
+use crate::errors::ContractErrors;
 
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
@@ -16,33 +19,36 @@ sol_storage! {
 	}
 }
 
+ 
+
 /* exposed methods */
 #[public]
 impl IncrementalMerkleTree {
     #[constructor]
-	pub fn init(&mut self, depth: U32) {
+	pub fn init(&mut self, depth: U32) -> Result<(), ContractErrors> {
 		let d: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
 		if d == 0 || d >= 32 {
-			panic!("IncrementalMerkleTree__InvalidDepth");
+			return Err(ContractErrors::invalid_depth());
 		}
 		self.depth.set(depth);
 		self.current_root_index.set(U32::from(0u32));
 		self.next_leaf_index.set(U32::from(0u32));
-		// initialize the tree with the zero hashes
+		/* initialize the tree with the zero hashes */
 		let init_root = Self::zeros_u32(d - 1);
 		self.roots.setter(U32::from(0u32)).unwrap().set(init_root);
+		Ok(())
 	}
 
-	pub fn insert(&mut self, leaf: FixedBytes<32>) -> U32 {
+	pub fn insert(&mut self, leaf: FixedBytes<32>) -> Result<U32, ContractErrors> {
 		let depth_u32: u32 = u32::from_be_bytes(self.depth.get().to_be_bytes::<4>());
 		if depth_u32 == 0 || depth_u32 >= 32 {
-			panic!("IncrementalMerkleTree__InvalidDepth");
+			return Err(ContractErrors::invalid_depth());
 		}
 
 		let next_idx_u32: u32 = u32::from_be_bytes(self.next_leaf_index.get().to_be_bytes::<4>());
 		let capacity: u64 = 1u64 << depth_u32;
 		if (next_idx_u32 as u64) == capacity {
-			panic!("IncrementalMerkleTree__TreeIsFull");
+			return Err(ContractErrors::tree_is_full());
 		}
 
 		let mut current_index: u32 = next_idx_u32;
@@ -71,7 +77,7 @@ impl IncrementalMerkleTree {
 		self.roots.setter(U32::from(new_root_idx)).unwrap().set(current_hash);
 
 		self.next_leaf_index.set(U32::from(next_idx_u32 + 1));
-		U32::from(next_idx_u32)
+		Ok(U32::from(next_idx_u32))
 	}
 
 	pub fn is_known_root(&self, root: FixedBytes<32>) -> bool {
@@ -143,7 +149,7 @@ impl IncrementalMerkleTree {
 			29 => fb32("0x2612a1395168260c9999287df0e3c3f1b0d8e008e90cd15941e4c2df08a68a5a"),
 			30 => fb32("0x10ebedce66a910039c8edb2cd832d6a9857648ccff5e99b5d08009b44b088edf"),
 			31 => fb32("0x213fb841f9de06958cf4403477bdbff7c59d6249daabfee147f853db7c808082"),
-			_ => panic!("IncrementalMerkleTree__IndexOutOfBounds"),
+			_ => panic!("index out of bounds"),
 		}
 	}
 
