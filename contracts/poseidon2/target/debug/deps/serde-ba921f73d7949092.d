@@ -1,0 +1,14 @@
+/Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/deps/libserde-ba921f73d7949092.rmeta: /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/build/serde-84a7debe972b9cf3/out/private.rs
+
+/Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/deps/libserde-ba921f73d7949092.rlib: /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/build/serde-84a7debe972b9cf3/out/private.rs
+
+/Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/deps/serde-ba921f73d7949092.d: /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/build/serde-84a7debe972b9cf3/out/private.rs
+
+/Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/gustavo/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/build/serde-84a7debe972b9cf3/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/gustavo/Projects/web3/stylus/mixer/contracts/poseidon2/target/debug/build/serde-84a7debe972b9cf3/out
