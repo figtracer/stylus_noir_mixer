@@ -2,6 +2,7 @@
 .env
 /contracts/.cargo
 /circuits/.cargo
+/contracts/poseidon2/target
 Cargo.lock
 /target
 .vscode
