@@ -29,7 +29,7 @@ name = "stylus_poseidon2"
 path = "src/main.rs"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [profile.release]
 codegen-units = 1

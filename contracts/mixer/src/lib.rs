@@ -10,11 +10,11 @@ use stylus_common::errors::ContractErrors;
 use stylus_imt::IncrementalMerkleTree;
 
 use stylus_sdk::{
-                 alloy_primitives::{U256, U32, uint},
-                 alloy_sol_types::sol,
-                 prelude::*,
-                 storage::{StorageBool, StorageGuard},
-                };
+    alloy_primitives::{U32, U256, uint},
+    alloy_sol_types::sol,
+    prelude::*,
+    storage::{StorageBool, StorageGuard},
+};
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
@@ -31,23 +31,26 @@ sol_interface! {
 }
 
 sol_storage! {
-    #[entrypoint] 
+    #[entrypoint]
     pub struct Mixer {
         mapping(bytes32 => bool) commitments;
         address imt;
     }
 }
 
-
 #[public]
 impl Mixer {
+    /* todo: add permission check */
     pub fn set_imt(&mut self, addr: Address) -> Result<(), ContractErrors> {
         self.imt.set(addr);
         Ok(())
     }
 
     #[payable]
-    pub fn deposit(&mut self, commitment: alloy_primitives::FixedBytes<32>) -> Result<(), ContractErrors> {
+    pub fn deposit(
+        &mut self,
+        commitment: alloy_primitives::FixedBytes<32>,
+    ) -> Result<(), ContractErrors> {
         /* check if commitment is already present */
         let guard: StorageGuard<StorageBool> = self.commitments.getter(commitment);
         if guard.get() {

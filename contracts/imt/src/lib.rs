@@ -15,7 +15,7 @@ const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
 sol_interface! {
     interface IHasher {
-        function hash2(bytes32 left, bytes32 right) external view returns (bytes32);
+        function hash2(uint256 left, uint256 right) external view returns (uint256);
     }
 }
 
@@ -49,7 +49,7 @@ impl IncrementalMerkleTree {
         Ok(())
     }
 
-    /* this should only be called by the owner of the contract */
+    /* todo: this should only be called by the owner of the contract */
     pub fn set_hasher(&mut self, addr: Address) -> Result<(), ContractErrors> {
         self.hasher.set(addr);
         Ok(())
@@ -179,11 +179,13 @@ fn hash_pair<S: TopLevelStorage>(
     left: FixedBytes<32>,
     right: FixedBytes<32>,
 ) -> FixedBytes<32> {
-    // For a `view` external function we can pass the storage reference
-    // directly as the call context.
-    hasher
-        .hash_2(storage, left, right)
-        .expect("hash_2 call failed")
+    /* convert the FixedBytes inputs to U256, call the hasher and convert the
+     * returned U256 back to FixedBytes<32> so the Merkle tree keeps using
+     * bytes32 internally. */
+    let out = hasher
+        .hash_2(storage, u256_from_b32(left), u256_from_b32(right))
+        .expect("hash_2 call failed");
+    b32_from_u256(out)
 }
 
 /* FixedBytes<32> to u256 */
