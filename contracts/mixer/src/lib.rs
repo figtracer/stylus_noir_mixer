@@ -6,12 +6,9 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 /* modules and imports */
-pub mod poseidon2;
-pub mod imt;
-pub mod errors;
+use stylus_common::errors::ContractErrors;
+use stylus_imt::IncrementalMerkleTree;
 
-use crate::imt::IncrementalMerkleTree;
-use crate::errors::ContractErrors;
 use stylus_sdk::{
                  alloy_primitives::{U256, U32, uint},
                  alloy_sol_types::sol,
@@ -21,28 +18,32 @@ use stylus_sdk::{
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
-sol_storage! {
-    #[entrypoint] 
-    pub struct Mixer {
-        #[borrow]
-        IncrementalMerkleTree imt;
-        mapping(bytes32 => bool) commitments;
-    }
-}
-
-/* events */
 sol! {
     /* events */
     event CommitmentInserted(uint32 indexed index);
 }
 
+sol_interface! {
+    /* interfaces */
+    interface IIMT {
+        function insert(bytes32 commitment) external returns (uint32);
+    }
+}
+
+sol_storage! {
+    #[entrypoint] 
+    pub struct Mixer {
+        mapping(bytes32 => bool) commitments;
+        address imt;
+    }
+}
+
+
 #[public]
-#[inherit(IncrementalMerkleTree)]
 impl Mixer {
-    /* initializes the imt with the given depth */
-    #[constructor]
-    pub fn init(&mut self, depth: U32) {
-        let _ = self.imt.init(depth);
+    pub fn set_imt(&mut self, addr: Address) -> Result<(), ContractErrors> {
+        self.imt.set(addr);
+        Ok(())
     }
 
     #[payable]

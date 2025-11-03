@@ -1,3 +1,4 @@
+extern crate alloc;
 use stylus_sdk::prelude::*;
 use stylus_sdk::alloy_sol_types::sol;
 
