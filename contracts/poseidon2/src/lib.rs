@@ -37,14 +37,11 @@ sol_storage! {
 
 #[public]
 impl Poseidon2 {
-    pub fn hash1(x: U256) -> U256 {
-        hash_internal(&[x], 1, false)
-    }
-    pub fn hash2(x: U256, y: U256) -> U256 {
-        hash_internal(&[x, y], 2, false)
-    }
-    pub fn hash3(x: U256, y: U256, z: U256) -> U256 {
-        hash_internal(&[x, y, z], 3, false)
+    pub fn hash2(left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
+        let x = U256::from_be_bytes(left.as_slice().try_into().unwrap());
+        let y = U256::from_be_bytes(right.as_slice().try_into().unwrap());
+        let out = hash_internal(&[x, y], 2, false);
+        FixedBytes::<32>::from(out.to_be_bytes::<32>())
     }
 }
 

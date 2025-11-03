@@ -6,3 +6,6 @@
 Cargo.lock
 /target
 .vscode
+/contracts/imt/target
+/contracts/mixer/target
+/contracts/poseidon2/target

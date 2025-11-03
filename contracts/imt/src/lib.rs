@@ -8,9 +8,7 @@ use alloc::vec::Vec;
 use stylus_common::errors::ContractErrors;
 use stylus_sdk::{
     alloy_primitives::{Address, FixedBytes, U32, U256},
-    evm, msg,
     prelude::*,
-    stylus_core::calls::context::Call,
 };
 
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
@@ -86,7 +84,7 @@ impl IncrementalMerkleTree {
                 right = current_hash;
             }
 
-            current_hash = hash_pair(self.hasher.get().into(), left, right);
+            current_hash = hash_pair(self, self.hasher.get().into(), left, right);
             current_index /= 2;
         }
 
@@ -175,14 +173,17 @@ fn zeros_u32(i: u32) -> FixedBytes<32> {
     }
 }
 
-fn hash_pair(hasher: IHasher, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
-    let l_u256 = u256_from_b32(left);
-    let r_u256 = u256_from_b32(right);
-    let config = Call::new().gas(evm::gas_left() / 2).value(msg::value());
-    let result = hasher
-        .hash2(config, l_u256, r_u256)
-        .expect("hash2 call failed");
-    b32_from_u256(result)
+fn hash_pair<S: TopLevelStorage>(
+    storage: &mut S,
+    hasher: IHasher,
+    left: FixedBytes<32>,
+    right: FixedBytes<32>,
+) -> FixedBytes<32> {
+    // For a `view` external function we can pass the storage reference
+    // directly as the call context.
+    hasher
+        .hash_2(storage, left, right)
+        .expect("hash_2 call failed")
 }
 
 /* FixedBytes<32> to u256 */

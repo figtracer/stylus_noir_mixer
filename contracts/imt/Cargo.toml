@@ -9,7 +9,6 @@ alloy-sol-types = { workspace = true }
 stylus-sdk = { workspace = true }
 hex = { version = "0.4", default-features = false }
 stylus_common = { path = "../common" }
-stylus_poseidon2 = { path = "../poseidon2" }
 
 [dev-dependencies]
 stylus-sdk = { workspace = true, features = ["stylus-test"] }
@@ -30,7 +29,7 @@ name = "stylus_imt"
 path = "src/main.rs"
 
 [lib]
-crate-type = ["lib", "cdylib"]
+crate-type = ["cdylib"]
 
 [profile.release]
 codegen-units = 1
