@@ -9,3 +9,5 @@ Cargo.lock
 /contracts/imt/target
 /contracts/mixer/target
 /contracts/poseidon2/target
+/circuits/target
+/node_modules
