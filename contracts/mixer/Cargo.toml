@@ -1,5 +1,5 @@
 [package]
-name = "stylus_mixer"
+name = "stylus-mixer"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
@@ -23,7 +23,7 @@ dotenv = "0.15.0"
 export-abi = ["stylus-sdk/export-abi"]
 
 [[bin]]
-name = "stylus_mixer"
+name = "stylus-mixer"
 path = "src/main.rs"
 
 [lib]
