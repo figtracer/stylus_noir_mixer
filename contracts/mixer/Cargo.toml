@@ -1,17 +1,16 @@
 [package]
 name = "stylus_mixer"
-version = "0.0.1"
-edition = "2024"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
 
 [dependencies]
-alloy-primitives = { workspace = true }
-alloy-sol-types = { workspace = true }
-stylus-sdk = { workspace = true }
-hex = { version = "0.4", default-features = false }
+alloy-primitives.workspace = true
+stylus-sdk.workspace = true
+alloy-sol-types.workspace = true
 
-stylus_common = { path = "../common" }
-stylus_poseidon2 = { path = "../poseidon2" }
-stylus_imt = { path = "../imt" }
+stylus-common = { path = "../common" }
+stylus-imt = { path = "../imt" }
 
 [dev-dependencies]
 stylus-sdk = { workspace = true, features = ["stylus-test"] }

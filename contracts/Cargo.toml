@@ -1,12 +1,49 @@
 [workspace]
-members = ["mixer", "imt", "poseidon2", "common"]
+members = ["mixer", "imt", "common", "poseidon"]
 resolver = "2"
 
+[workspace.package]
+authors = ["Fig"]
+edition = "2021"
+license = "MIT"
+version = "0.0.1"
+
 [workspace.dependencies]
-alloy-primitives = "=0.8.20"
-alloy-sol-types = "=0.8.20"
 stylus-sdk = "0.9.0"
+
+alloy = { version = "=0.7.3", features = [
+  "contract",
+  "network",
+  "providers",
+  "provider-http",
+  "rpc-client",
+  "rpc-types-eth",
+  "signer-local",
+  "getrandom",
+] }
+alloy-primitives = { version = "=0.8.20", default-features = false, features = [
+  "tiny-keccak",
+] }
+alloy-sol-types = { version = "=0.8.20", default-features = false }
+ruint = "^1.12.3"
+
+openzeppelin-crypto = { version = "=0.3.0", features = ["ruint"] }
+
 parity-scale-codec = "=3.7.5"
 
+e2e = { git = "https://github.com/OpenZeppelin/rust-contracts-stylus", package = "e2e", tag = "v0.3.0" }
 
-
+eyre = "0.6.8"
+keccak-const = "0.2.0"
+rand = "0.9.0"
+regex = "1.10.4"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.12.0", features = ["full"] }
+futures = "0.3.30"
+num-traits = "0.2.14"
+zeroize = { version = "1.8.1", features = ["derive"] }
+proptest = "1"
+educe = "0.6.0"
+hex-literal = "1.0.0"
+sha2 = "0.10.9"
+static_assertions = "1.1.0"

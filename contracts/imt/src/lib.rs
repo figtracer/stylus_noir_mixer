@@ -7,33 +7,28 @@ use alloc::vec::Vec;
 
 use stylus_common::errors::ContractErrors;
 use stylus_sdk::{
-    alloy_primitives::{Address, FixedBytes, U32, U256},
+    alloy_primitives::{Address, FixedBytes, U256, U32},
+    evm, msg,
     prelude::*,
+    storage::{StorageAddress, StorageArray, StorageFixedBytes, StorageMap, StorageU32},
+    stylus_core::calls::context::Call,
 };
 
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
-sol_interface! {
-    interface IHasher {
-        function hash2(uint256 left, uint256 right) external view returns (uint256);
-    }
-}
-
-sol_storage! {
-    #[entrypoint]
-    pub struct IncrementalMerkleTree {
-        uint32 depth;
-        uint32 current_root_index;
-        uint32 next_leaf_index;
-        mapping(uint32 => bytes32) cached_subtrees;
-        bytes32[30] roots;
-        address hasher;
-    }
+#[storage]
+pub struct IMTContract {
+    depth: StorageU32,
+    current_root_index: StorageU32,
+    next_leaf_index: StorageU32,
+    cached_subtrees: StorageMap<U32, StorageFixedBytes<32>>,
+    roots: StorageArray<StorageFixedBytes<32>, 30>,
+    hasher: StorageAddress,
 }
 
 /* exposed methods */
 #[public]
-impl IncrementalMerkleTree {
+impl IMTContract {
     #[constructor]
     pub fn initialize(&mut self, depth: U32) -> Result<(), ContractErrors> {
         let d: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
@@ -84,7 +79,7 @@ impl IncrementalMerkleTree {
                 right = current_hash;
             }
 
-            current_hash = hash_pair(self, self.hasher.get().into(), left, right);
+            current_hash = self.hash_pair(left, right);
             current_index /= 2;
         }
 
@@ -135,6 +130,21 @@ impl IncrementalMerkleTree {
     }
 }
 
+/* internal helpers */
+
+fn hash_pair(
+    hasher_address: Address,
+    left: FixedBytes<32>,
+    right: FixedBytes<32>,
+) -> FixedBytes<32> {
+    let hasher = IHasher::new(hasher_address);
+    let config = Call::new().gas(evm::gas_left() / 2).value(msg::value());
+
+    let out = hasher
+        .hash_2(config, u256_from_b32(left), u256_from_b32(right))
+        .expect("hash_2 call failed");
+    b32_from_u256(out)
+}
 fn zeros_u32(i: u32) -> FixedBytes<32> {
     match i {
         0 => fb32("0x0d823319708ab99ec915efd4f7e03d11ca1790918e8f04cd14100aceca2aa9ff"),
@@ -171,21 +181,6 @@ fn zeros_u32(i: u32) -> FixedBytes<32> {
         31 => fb32("0x213fb841f9de06958cf4403477bdbff7c59d6249daabfee147f853db7c808082"),
         _ => panic!("index out of bounds"),
     }
-}
-
-fn hash_pair<S: TopLevelStorage>(
-    storage: &mut S,
-    hasher: IHasher,
-    left: FixedBytes<32>,
-    right: FixedBytes<32>,
-) -> FixedBytes<32> {
-    /* convert the FixedBytes inputs to U256, call the hasher and convert the
-     * returned U256 back to FixedBytes<32> so the Merkle tree keeps using
-     * bytes32 internally. */
-    let out = hasher
-        .hash_2(storage, u256_from_b32(left), u256_from_b32(right))
-        .expect("hash_2 call failed");
-    b32_from_u256(out)
 }
 
 /* FixedBytes<32> to u256 */

@@ -1,13 +1,11 @@
 /contracts/target
+/circuits/target
 .env
-/contracts/.cargo
-/circuits/.cargo
-/contracts/poseidon2/target
 Cargo.lock
 /target
 .vscode
 /contracts/imt/target
 /contracts/mixer/target
-/contracts/poseidon2/target
-/circuits/target
+/contracts/poseidon/target
 /node_modules
+/nitro-testnode

@@ -6,5 +6,5 @@ pub extern "C" fn main() {}
 
 #[cfg(feature = "export-abi")]
 fn main() {
-    stylus_imt::print_from_args();
+    stylus - imt::print_from_args();
 }

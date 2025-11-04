@@ -10,7 +10,7 @@ use stylus_common::errors::ContractErrors;
 use stylus_imt::IncrementalMerkleTree;
 
 use stylus_sdk::{
-    alloy_primitives::{U32, U256, uint},
+    alloy_primitives::{uint, Address, U256, U32},
     alloy_sol_types::sol,
     prelude::*,
     storage::{StorageBool, StorageGuard},
@@ -47,8 +47,8 @@ impl Mixer {
     }
 
     #[payable]
-    pub fn deposit(
-        &mut self,
+    pub fn deposit<S: TopLevelStorage>(
+        storage: &mut S,
         commitment: alloy_primitives::FixedBytes<32>,
     ) -> Result<(), ContractErrors> {
         /* check if commitment is already present */
@@ -65,7 +65,11 @@ impl Mixer {
 
         self.commitments.insert(commitment, true);
 
-        let inserted_index: U32 = self.imt.insert(commitment)?;
+        let inserted_index: U32 = {
+            let imt_address = self.imt.get();
+            let imt = IIMT::new(imt_address);
+            imt.insert(storage, commitment).expect("insert call failed")
+        };
 
         /* convert the inserted index to a u32, otherwise we can't log it */
         let idx_u32: u32 = u32::from_be_bytes(inserted_index.to_be_bytes::<4>());
