@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "stylus:check": "bash scripts/stylus-check-all.sh"
+  },
   "dependencies": {
     "@aztec/bb.js": "^0.82.2",
     "@noir-lang/noir_js": "^1.0.0-beta.3",
