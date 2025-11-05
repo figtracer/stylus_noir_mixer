@@ -9,10 +9,9 @@ openzeppelin-crypto.workspace = true
 alloy-primitives.workspace = true
 stylus-sdk.workspace = true
 alloy-sol-types.workspace = true
-
+alloy.workspace = true
 
 [dev-dependencies]
-alloy.workspace = true
 e2e.workspace = true
 tokio.workspace = true
 eyre.workspace = true

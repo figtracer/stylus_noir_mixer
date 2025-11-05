@@ -1,11 +1,13 @@
+use alloy::sol;
 pub use callable::*;
-use stylus_sdk::alloy_sol_types::sol;
 
-sol! {
-    interface PoseidonAbi {
-        function hash(uint256[2] inputs) external view returns (uint256);
+sol!(
+    #[sol(rpc)]
+   contract PoseidonAbi {
+        #[derive(Debug)]
+        function hash(uint[2] memory inputs) external view returns (uint hash);
     }
-}
+);
 
 mod callable {
     #![allow(missing_docs)]

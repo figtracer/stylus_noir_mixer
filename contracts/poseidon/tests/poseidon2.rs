@@ -4,20 +4,14 @@ use alloy_primitives::{hex, uint, U256};
 use e2e::Account;
 use eyre::Result;
 
-use crate::abi::PoseidonExample;
-
-mod abi;
-
-// ============================================================================
-// Integration Tests: Poseidon
-// ============================================================================
+use openzeppelin_poseidon::abi::PoseidonAbi;
 
 #[e2e::test]
 async fn poseidon_works(alice: Account) -> Result<()> {
     let contract_addr = alice.as_deployer().deploy().await?.contract_address;
-    let contract = PoseidonExample::new(contract_addr, &alice.wallet);
+    let contract = PoseidonAbi::new(contract_addr, &alice.wallet);
 
-    let PoseidonExample::hashReturn { hash } = contract
+    let PoseidonAbi::hashReturn { hash } = contract
         .hash([uint!(123_U256), uint!(123456_U256)])
         .call()
         .await?;
