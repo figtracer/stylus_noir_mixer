@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "stylus:check": "bash scripts/stylus-check-all.sh"
+    "check": "bash scripts/check.sh"
   },
   "dependencies": {
     "@aztec/bb.js": "^0.82.2",
