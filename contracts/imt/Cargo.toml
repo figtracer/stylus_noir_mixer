@@ -3,7 +3,7 @@ name = "stylus-imt"
 authors = ["Fig"]
 edition.workspace = true
 license.workspace = true
-version.workspace = true
+version = "0.0.1"
 
 [dependencies]
 alloy-primitives.workspace = true
@@ -11,6 +11,7 @@ stylus-sdk.workspace = true
 alloy-sol-types.workspace = true
 
 stylus-common = { path = "../common" }
+openzeppelin-poseidon = { path = "../poseidon" }
 
 [dev-dependencies]
 alloy.workspace = true

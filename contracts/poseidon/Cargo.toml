@@ -2,12 +2,14 @@
 name = "openzeppelin-poseidon"
 edition.workspace = true
 license.workspace = true
-version.workspace = true
+version = "0.0.1"
 
 [dependencies]
 openzeppelin-crypto.workspace = true
 alloy-primitives.workspace = true
 stylus-sdk.workspace = true
+alloy-sol-types.workspace = true
+
 
 [dev-dependencies]
 alloy.workspace = true

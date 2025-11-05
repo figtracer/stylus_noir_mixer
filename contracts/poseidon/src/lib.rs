@@ -4,6 +4,8 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
+pub mod abi;
+
 use openzeppelin_crypto::{
     arithmetic::uint::U256,
     field::instance::FpBN256,
