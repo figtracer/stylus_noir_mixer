@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 
 /* modules and imports */
 use stylus_common::errors::ContractErrors;
-use stylus_imt::IncrementalMerkleTree;
+use stylus_imt::IMT;
 
 use stylus_sdk::{
     alloy_primitives::{uint, Address, U256, U32},

@@ -13,11 +13,8 @@ stylus-common = { path = "../common" }
 stylus-imt = { path = "../imt" }
 
 [dev-dependencies]
-stylus-sdk = { workspace = true, features = ["stylus-test"] }
-tokio = { version = "1.12.0", features = ["full"] }
-ethers = "2.0"
-eyre = "0.6.8"
-dotenv = "0.15.0"
+eyre.workspace = true
+tokio.workspace = true
 
 [features]
 export-abi = ["stylus-sdk/export-abi"]
@@ -28,13 +25,3 @@ path = "src/main.rs"
 
 [lib]
 crate-type = ["cdylib"]
-
-[profile.release]
-codegen-units = 1
-strip = true
-lto = true
-panic = "abort"
-
-# If you need to reduce the binary size, it is advisable to try other
-# optimization levels, such as "s" and "z"
-opt-level = "z"

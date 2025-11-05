@@ -8,18 +8,20 @@ version = "0.0.1"
 openzeppelin-crypto.workspace = true
 alloy-primitives.workspace = true
 stylus-sdk.workspace = true
-alloy-sol-types.workspace = true
-alloy.workspace = true
+
 
 [dev-dependencies]
 e2e.workspace = true
 tokio.workspace = true
 eyre.workspace = true
+alloy.workspace = true
 
 [lib]
 crate-type = ["lib", "cdylib"]
 
 [features]
+default = ["contract"]
+contract = []
 e2e = []
 export-abi = ["stylus-sdk/export-abi"]
 

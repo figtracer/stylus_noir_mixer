@@ -1,13 +1,4 @@
-use alloy::sol;
 pub use callable::*;
-
-sol!(
-    #[sol(rpc)]
-   contract PoseidonAbi {
-        #[derive(Debug)]
-        function hash(uint[2] memory inputs) external view returns (uint hash);
-    }
-);
 
 mod callable {
     #![allow(missing_docs)]

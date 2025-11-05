@@ -1,10 +1,9 @@
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
 #![allow(clippy::unused_self)]
 extern crate alloc;
-
 use alloc::vec::Vec;
 
-pub mod abi;
+pub mod interface;
 
 use openzeppelin_crypto::{
     arithmetic::uint::U256,
@@ -13,12 +12,14 @@ use openzeppelin_crypto::{
 };
 use stylus_sdk::prelude::*;
 
+#[cfg(feature = "contract")]
 #[entrypoint]
 #[storage]
-struct PoseidonExample;
+struct Poseidon;
 
+#[cfg(feature = "contract")]
 #[public]
-impl PoseidonExample {
+impl Poseidon {
     fn hash(&self, inputs: [alloy_primitives::U256; 2]) -> alloy_primitives::U256 {
         let mut hasher = Poseidon2::<BN256Params, FpBN256>::new();
 

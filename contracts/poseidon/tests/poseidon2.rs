@@ -4,7 +4,8 @@ use alloy_primitives::{hex, uint, U256};
 use e2e::Account;
 use eyre::Result;
 
-use openzeppelin_poseidon::abi::PoseidonAbi;
+use crate::abi::PoseidonAbi;
+mod abi;
 
 #[e2e::test]
 async fn poseidon_works(alice: Account) -> Result<()> {
