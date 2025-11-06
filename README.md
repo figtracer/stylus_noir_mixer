@@ -1,4 +1,4 @@
-## stylus_noir_mixer
+## stylus_mixer
 
 > Since the verifier is a huge Solidity file, 75% of the project is written in Solidity but you get the point. Still in development. Might be broken somewhere.
 
