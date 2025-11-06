@@ -131,7 +131,9 @@ impl IMT {
     }
 }
 
-/* internal helpers */
+/* ======================================================================
+ *                               INTERNAL HELPERS
+ * ====================================================================== */
 impl IMT {
     fn hash_pair(&self, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
         let hasher = IPoseidon::new(self.hasher.get());
