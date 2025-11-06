@@ -6,5 +6,5 @@ pub extern "C" fn main() {}
 
 #[cfg(feature = "export-abi")]
 fn main() {
-    poseidon_example::print_from_args();
+    openzeppelin_poseidon::print_from_args();
 }
