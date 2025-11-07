@@ -10,6 +10,10 @@ mod callable {
             function setHasher(address hasher) external;
             function isKnownRoot(bytes32 root) external view returns (bool);
             function zeros(uint256 i) external view returns (bytes32);
+            function getHasher() external view returns (address);
+            function getDepth() external view returns (uint32);
+            function getCurrentRootIndex() external view returns (uint32);
+            function getNextLeafIndex() external view returns (uint32);
         }
     }
 }

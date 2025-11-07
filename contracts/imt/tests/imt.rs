@@ -35,8 +35,8 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
     );
 
     /* insert commitment */
-    let rcpt = receipt!(contract.insert(commitment))?;
-    println!("insert tx succeeded. contract: {:?}", rcpt);
+    let IMTAbi::insertReturn { _0: index } = contract.insert(commitment).call().await?;
+    println!("insert tx succeeded. nextLeafIndex: {index:?}");
     Ok(())
 }
 

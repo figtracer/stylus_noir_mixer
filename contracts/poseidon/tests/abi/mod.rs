@@ -5,6 +5,6 @@ sol!(
     #[sol(rpc)]
    contract PoseidonAbi {
         #[derive(Debug)]
-        function hash(uint[2] memory inputs) external view returns (uint hash);
+        function hash(uint256[2] memory inputs) external view returns (uint256 hash);
     }
 );

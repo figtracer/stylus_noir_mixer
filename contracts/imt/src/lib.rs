@@ -40,8 +40,7 @@ impl IMT {
         self.depth.set(depth);
         self.current_root_index.set(U32::from(0u32));
         self.next_leaf_index.set(U32::from(0u32));
-        /* initialize the tree with the zero hashes */
-        let init_root = Self::zeros_u32(d - 1);
+        let init_root = Self::zeros_u32(d);
         self.roots.setter(U32::from(0u32)).unwrap().set(init_root);
         self.hasher.set(hasher);
         Ok(())
@@ -49,10 +48,6 @@ impl IMT {
 
     fn insert(&mut self, leaf: FixedBytes<32>) -> Result<U32, ContractErrors> {
         let depth_u32: u32 = u32::from_be_bytes(self.depth.get().to_be_bytes::<4>());
-        if depth_u32 == 0 || depth_u32 >= 32 {
-            return Err(ContractErrors::invalid_depth());
-        }
-
         let next_idx_u32: u32 = u32::from_be_bytes(self.next_leaf_index.get().to_be_bytes::<4>());
         let capacity: u64 = 1u64 << depth_u32;
         if (next_idx_u32 as u64) == capacity {
@@ -65,19 +60,17 @@ impl IMT {
         let mut right: FixedBytes<32>;
 
         for i in 0..depth_u32 {
-            if current_index % 2 == 0 {
+            if (current_index & 1) == 0 {
                 left = current_hash;
-                right = Self::zeros_u32(i as u32);
-                self.cached_subtrees
-                    .insert(U32::from(i as u32), current_hash);
+                right = Self::zeros_u32(i);
+                self.cached_subtrees.setter(U32::from(i)).set(current_hash);
             } else {
-                let guard = self.cached_subtrees.getter(U32::from(i as u32));
-                left = guard.get();
+                left = self.cached_subtrees.getter(U32::from(i)).get();
                 right = current_hash;
             }
 
             current_hash = self.hash_pair(left, right);
-            current_index /= 2;
+            current_index >>= 1;
         }
 
         let cur_root_idx: u32 =
@@ -90,7 +83,7 @@ impl IMT {
             .set(current_hash);
 
         self.next_leaf_index.set(U32::from(next_idx_u32 + 1));
-        Ok(U32::from(next_idx_u32))
+        Ok(U32::from(self.next_leaf_index.get()))
     }
 
     fn is_known_root(&self, root: FixedBytes<32>) -> bool {
@@ -152,10 +145,10 @@ impl IMT {
         let hasher = IPoseidon::new(self.hasher.get());
         let out = hasher
             .hash(
-                Call::new_in(self),
+                Call::new(),
                 [Self::u256_from_b32(left), Self::u256_from_b32(right)],
             )
-            .expect("hash call failed");
+            .expect("poseidon hash call failed");
         Self::b32_from_u256(out)
     }
 
