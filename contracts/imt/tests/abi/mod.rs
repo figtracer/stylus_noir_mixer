@@ -8,6 +8,6 @@ sol!(
         function insert(bytes32 leaf) external returns (uint32);
         function setHasher(address hasher) external;
         function isKnownRoot(bytes32 root) external view returns (bool known);
-        function zeros(uint i) external view returns (bytes32 z);
+        function zeros(uint256 i) external view returns (bytes32 z);
     }
 );

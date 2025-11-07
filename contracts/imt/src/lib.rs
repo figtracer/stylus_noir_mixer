@@ -32,7 +32,7 @@ pub struct IMT {
 #[public]
 impl IMT {
     #[constructor]
-    fn initialize(&mut self, depth: U32) -> Result<(), ContractErrors> {
+    fn initialize(&mut self, depth: U32, hasher: Address) -> Result<(), ContractErrors> {
         let d: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
         if d == 0 || d >= 32 {
             return Err(ContractErrors::invalid_depth());
@@ -43,12 +43,7 @@ impl IMT {
         /* initialize the tree with the zero hashes */
         let init_root = Self::zeros_u32(d - 1);
         self.roots.setter(U32::from(0u32)).unwrap().set(init_root);
-        Ok(())
-    }
-
-    /* todo: this should only be called by the owner of the contract */
-    fn set_hasher(&mut self, addr: Address) -> Result<(), ContractErrors> {
-        self.hasher.set(addr);
+        self.hasher.set(hasher);
         Ok(())
     }
 
@@ -98,7 +93,7 @@ impl IMT {
         Ok(U32::from(next_idx_u32))
     }
 
-    pub fn is_known_root(&self, root: FixedBytes<32>) -> bool {
+    fn is_known_root(&self, root: FixedBytes<32>) -> bool {
         if root == FixedBytes::<32>::ZERO {
             return false;
         }
@@ -122,12 +117,25 @@ impl IMT {
         false
     }
 
-    pub fn get_hasher(&self) -> Address {
+    /* getters */
+    fn get_hasher(&self) -> Address {
         self.hasher.get()
     }
 
-    /* public pure equivalent */
-    pub fn zeros(i: U256) -> FixedBytes<32> {
+    fn get_depth(&self) -> U32 {
+        self.depth.get()
+    }
+
+    fn get_current_root_index(&self) -> U32 {
+        self.current_root_index.get()
+    }
+
+    fn get_next_leaf_index(&self) -> U32 {
+        self.next_leaf_index.get()
+    }
+
+    /* public pure */
+    fn zeros(i: U256) -> FixedBytes<32> {
         let i_u32: u32 = {
             let bytes = i.to_be_bytes::<32>();
             u32::from_be_bytes([bytes[28], bytes[29], bytes[30], bytes[31]])
