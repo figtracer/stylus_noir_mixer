@@ -7,7 +7,7 @@ version = "0.0.1"
 
 [dependencies]
 alloy-primitives.workspace = true
-stylus-sdk.workspace = true
+stylus-sdk = { workspace = true, features = ["debug"] }
 alloy-sol-types.workspace = true
 stylus-common = { path = "../common" }
 openzeppelin-poseidon = { path = "../poseidon", default-features = false }

@@ -10,6 +10,7 @@ use openzeppelin_poseidon::interface::PoseidonInterface as IPoseidon;
 use stylus_common::errors::ContractErrors;
 use stylus_sdk::{
     alloy_primitives::{Address, FixedBytes, U256, U32},
+    call::Call,
     prelude::*,
     storage::{StorageAddress, StorageArray, StorageFixedBytes, StorageMap, StorageU32},
 };
@@ -97,7 +98,7 @@ impl IMT {
         Ok(U32::from(next_idx_u32))
     }
 
-    fn is_known_root(&self, root: FixedBytes<32>) -> bool {
+    pub fn is_known_root(&self, root: FixedBytes<32>) -> bool {
         if root == FixedBytes::<32>::ZERO {
             return false;
         }
@@ -121,8 +122,12 @@ impl IMT {
         false
     }
 
+    pub fn get_hasher(&self) -> Address {
+        self.hasher.get()
+    }
+
     /* public pure equivalent */
-    fn zeros(i: U256) -> FixedBytes<32> {
+    pub fn zeros(i: U256) -> FixedBytes<32> {
         let i_u32: u32 = {
             let bytes = i.to_be_bytes::<32>();
             u32::from_be_bytes([bytes[28], bytes[29], bytes[30], bytes[31]])
@@ -135,16 +140,17 @@ impl IMT {
  *                               INTERNAL HELPERS
  * ====================================================================== */
 impl IMT {
-    fn hash_pair(&self, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
+    fn hash_pair(&mut self, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
         let hasher = IPoseidon::new(self.hasher.get());
         let out = hasher
             .hash(
-                self,
+                Call::new_in(self),
                 [Self::u256_from_b32(left), Self::u256_from_b32(right)],
             )
             .expect("hash call failed");
         Self::b32_from_u256(out)
     }
+
     fn zeros_u32(i: u32) -> FixedBytes<32> {
         match i {
             0 => Self::fb32("0x168db4aa1d4e4bf2ee46eb882e1c38a7de1a4da47e17b207a5494a14605ae38e"),

@@ -13,7 +13,7 @@ mod abi;
 async fn imt_insert_works(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256)))
+        .with_constructor(constructor!(uint!(5_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -23,9 +23,11 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
     /* deploy poseidon */
     let poseidon_rcpt = deploy_poseidon(&alice).await?;
     let poseidon_addr = poseidon_rcpt.contract_address;
+    println!("poseidon deployed at: {poseidon_addr:?}");
 
     /* set poseidon as hasher */
-    receipt!(contract.setHasher(poseidon_addr))?;
+    let rcpt = receipt!(contract.setHasher(poseidon_addr))?;
+    println!("set hasher tx succeeded: {:?}", rcpt);
 
     /* generate commitment */
     let commitment = generate_commitment_from_ts()?;
@@ -36,7 +38,7 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
 
     /* insert commitment */
     let rcpt = receipt!(contract.insert(commitment))?;
-    println!("insert tx succeeded. contract: {:?}", rcpt.contract_address);
+    println!("insert tx succeeded. contract: {:?}", rcpt);
     Ok(())
 }
 
@@ -114,10 +116,7 @@ async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
  * ====================================================================== */
 async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
     let poseidon_wasm = poseidon_wasm_path()?;
-    println!("deploying Poseidon wasm at: {}", poseidon_wasm.display());
     let poseidon_rcpt = alice.as_deployer().deploy_wasm(&poseidon_wasm).await?;
-    let poseidon_addr = poseidon_rcpt.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
     Ok(poseidon_rcpt)
 }
 
@@ -162,9 +161,7 @@ fn generate_commitment_from_ts() -> eyre::Result<FixedBytes<32>> {
         ));
     }
 
-    let mut s = String::from_utf8(output.stdout)?;
-    s = s.trim().to_string();
-    println!("ts commitment raw payload: {}", s);
+    let s = String::from_utf8(output.stdout)?;
     let s = s.strip_prefix("0x").unwrap_or(&s);
 
     let bytes = alloy::hex::decode(s)?;
