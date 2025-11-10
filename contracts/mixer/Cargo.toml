@@ -10,7 +10,7 @@ stylus-sdk.workspace = true
 alloy-sol-types.workspace = true
 
 stylus-common = { path = "../common" }
-stylus-imt = { path = "../imt" }
+stylus-imt = { path = "../imt", default-features = false }
 
 [dev-dependencies]
 eyre.workspace = true

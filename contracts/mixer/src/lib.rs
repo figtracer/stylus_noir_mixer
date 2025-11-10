@@ -7,50 +7,38 @@ use alloc::vec::Vec;
 
 /* modules and imports */
 use stylus_common::errors::ContractErrors;
-use stylus_imt::IMT;
-
+use stylus_imt::interface::IIMT;
 use stylus_sdk::{
-    alloy_primitives::{uint, Address, U256, U32},
+    alloy_primitives::{uint, Address, FixedBytes, U256},
     alloy_sol_types::sol,
+    call::Call,
     prelude::*,
-    storage::{StorageBool, StorageGuard},
+    storage::{StorageAddress, StorageBool, StorageGuard, StorageMap},
 };
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 sol! {
-    /* events */
     event CommitmentInserted(uint32 indexed index);
 }
 
-sol_interface! {
-    /* interfaces */
-    interface IIMT {
-        function insert(bytes32 commitment) external returns (uint32);
-    }
-}
-
-sol_storage! {
-    #[entrypoint]
-    pub struct Mixer {
-        mapping(bytes32 => bool) commitments;
-        address imt;
-    }
+#[entrypoint]
+#[storage]
+pub struct Mixer {
+    commitments: StorageMap<FixedBytes<32>, StorageBool>,
+    imt: StorageAddress,
 }
 
 #[public]
 impl Mixer {
-    /* todo: add permission check */
-    pub fn set_imt(&mut self, addr: Address) -> Result<(), ContractErrors> {
-        self.imt.set(addr);
+    #[constructor]
+    fn initialize(&mut self, imt: Address) -> Result<(), ContractErrors> {
+        self.imt.set(imt);
         Ok(())
     }
 
     #[payable]
-    pub fn deposit<S: TopLevelStorage>(
-        storage: &mut S,
-        commitment: alloy_primitives::FixedBytes<32>,
-    ) -> Result<(), ContractErrors> {
+    fn deposit(&mut self, commitment: FixedBytes<32>) -> Result<(), ContractErrors> {
         /* check if commitment is already present */
         let guard: StorageGuard<StorageBool> = self.commitments.getter(commitment);
         if guard.get() {
@@ -65,15 +53,17 @@ impl Mixer {
 
         self.commitments.insert(commitment, true);
 
-        let inserted_index: U32 = {
-            let imt_address = self.imt.get();
-            let imt = IIMT::new(imt_address);
-            imt.insert(storage, commitment).expect("insert call failed")
-        };
+        let imt = IIMT::new(self.imt.get());
+        let inserted_index = imt
+            .insert(Call::new(), commitment)
+            .expect("insert call failed");
 
-        /* convert the inserted index to a u32, otherwise we can't log it */
-        let idx_u32: u32 = u32::from_be_bytes(inserted_index.to_be_bytes::<4>());
-        log(self.vm(), CommitmentInserted { index: idx_u32 });
+        log(
+            self.vm(),
+            CommitmentInserted {
+                index: inserted_index,
+            },
+        );
         Ok(())
     }
 }

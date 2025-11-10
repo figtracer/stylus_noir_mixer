@@ -5,6 +5,8 @@
 extern crate alloc;
 use alloc::vec::Vec;
 
+pub mod interface;
+
 use openzeppelin_poseidon::interface::PoseidonInterface as IPoseidon;
 
 use stylus_common::errors::ContractErrors;
@@ -17,6 +19,7 @@ use stylus_sdk::{
 
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
+#[cfg(feature = "contract")]
 #[entrypoint]
 #[storage]
 pub struct IMT {
@@ -29,6 +32,7 @@ pub struct IMT {
 }
 
 /* exposed methods */
+#[cfg(feature = "contract")]
 #[public]
 impl IMT {
     #[constructor]
@@ -140,6 +144,7 @@ impl IMT {
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
+#[cfg(feature = "contract")]
 impl IMT {
     fn hash_pair(&mut self, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
         let hasher = IPoseidon::new(self.hasher.get());

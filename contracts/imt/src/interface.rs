@@ -5,7 +5,7 @@ mod callable {
     use stylus_sdk::prelude::sol_interface;
 
     sol_interface! {
-        interface IMTInterface {
+        interface IIMT {
             function insert(bytes32 leaf) external returns (uint32);
             function setHasher(address hasher) external;
             function isKnownRoot(bytes32 root) external view returns (bool);

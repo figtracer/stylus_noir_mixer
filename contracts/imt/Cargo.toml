@@ -19,6 +19,8 @@ eyre.workspace = true
 alloy.workspace = true
 
 [features]
+default = ["contract"]
+contract = []
 e2e = []
 export-abi = ["stylus-sdk/export-abi"]
 
