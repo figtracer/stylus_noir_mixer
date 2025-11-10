@@ -13,38 +13,17 @@ const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 #[e2e::test]
 async fn mixer_deposit_works(alice: Account) -> Result<()> {
-    /* Deploy poseidon */
-    let poseidon_rcpt = deploy_poseidon(&alice).await?;
-    let poseidon_addr = poseidon_rcpt.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
-
-    /* Deploy imt */
-    let imt_rcpt = deploy_imt(&alice, poseidon_addr).await?;
-    let imt_addr = imt_rcpt.contract_address;
-    println!("imt deployed at: {imt_addr:?}");
-
-    /*
-     *   Deploy verifier
-     *   ----------------
-     *   we need to deploy this outside the testing suite (because i still have no clue how do deploy solidity contracts in e2e tests)
-     *   so we will deploy it once and use the address in the tests using:
-     *
-     *   forge create src/Verifier.sol:HonkVerifier
-     *    --rpc-url http://localhost:8547
-     *    --private-key 0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659
-     *    --broadcast
-     */
-
-    /* Deploy mixer */
-    let mixer_wasm = mixer_wasm_path()?;
-    let verifier_addr = Address::ZERO; // not needed for deposit path
-    let contract_addr = alice
-        .as_deployer()
-        .with_constructor(constructor!(verifier_addr, poseidon_addr, imt_addr))
-        .deploy_wasm(&mixer_wasm)
+    /* deploy poseidon */
+    let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
+    /* deploy imt */
+    let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
+    /* deploy verifier */
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    /* deploy mixer */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
         .await?
         .contract_address;
-    let contract = MixerAbi::new(contract_addr, &alice.wallet);
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
     /* generate commitment */
     let commitment = generate_commitment_from_ts()?;
@@ -53,28 +32,24 @@ async fn mixer_deposit_works(alice: Account) -> Result<()> {
         alloy::hex::encode(commitment.as_slice()),
     );
 
-    contract
-        .deposit(commitment)
-        .value(DENOMINATION)
-        .call()
-        .await?;
-
+    mixer.deposit(commitment).value(DENOMINATION).call().await?;
+    // TODO: assert
     Ok(())
 }
 
 #[e2e::test]
 async fn mixer_deposit_rejects_invalid_denomination(alice: Account) -> Result<()> {
-    /* deploy poseidon and imt */
+    /* deploy poseidon */
     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
+    /* deploy imt */
     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-    let mixer_wasm = mixer_wasm_path()?;
-    let contract_addr = alice
-        .as_deployer()
-        .with_constructor(constructor!(Address::ZERO, poseidon_addr, imt_addr))
-        .deploy_wasm(&mixer_wasm)
+    /* deploy verifier */
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    /* deploy mixer */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
         .await?
         .contract_address;
-    let contract = MixerAbi::new(contract_addr, &alice.wallet);
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
     /* generate commitment */
     let commitment = generate_commitment_from_ts()?;
@@ -84,27 +59,24 @@ async fn mixer_deposit_rejects_invalid_denomination(alice: Account) -> Result<()
     );
 
     /* call deposit with zero value -> expect revert */
-    contract
-        .deposit(commitment)
-        .value(U256::ZERO)
-        .call()
-        .await?;
+    mixer.deposit(commitment).value(U256::ZERO).call().await?;
+    // TODO: assert
     Ok(())
 }
 
 #[e2e::test]
 async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()> {
-    /* deploy poseidon and imt */
+    /* deploy poseidon */
     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
+    /* deploy imt */
     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-    let mixer_wasm = mixer_wasm_path()?;
-    let contract_addr = alice
-        .as_deployer()
-        .with_constructor(constructor!(Address::ZERO, poseidon_addr, imt_addr))
-        .deploy_wasm(&mixer_wasm)
+    /* deploy verifier */
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    /* deploy mixer */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
         .await?
         .contract_address;
-    let contract = MixerAbi::new(contract_addr, &alice.wallet);
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
     /* generate commitment */
     let commitment = generate_commitment_from_ts()?;
@@ -113,17 +85,9 @@ async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()
         alloy::hex::encode(commitment.as_slice()),
     );
 
-    contract
-        .deposit(commitment)
-        .value(DENOMINATION)
-        .call()
-        .await?;
-
-    contract
-        .deposit(commitment)
-        .value(DENOMINATION)
-        .call()
-        .await?;
+    mixer.deposit(commitment).value(DENOMINATION).call().await?;
+    mixer.deposit(commitment).value(DENOMINATION).call().await?;
+    // TODO: assert
     Ok(())
 }
 
@@ -144,6 +108,21 @@ async fn deploy_imt(alice: &Account, poseidon_addr: Address) -> Result<e2e::Rece
         .deploy_wasm(&imt_wasm)
         .await?;
     Ok(imt_rcpt)
+}
+
+async fn deploy_mixer(
+    alice: &Account,
+    verifier_addr: Address,
+    poseidon_addr: Address,
+    imt_addr: Address,
+) -> Result<e2e::Receipt> {
+    let mixer_wasm = mixer_wasm_path()?;
+    let mixer_rcpt = alice
+        .as_deployer()
+        .with_constructor(constructor!(verifier_addr, poseidon_addr, imt_addr))
+        .deploy_wasm(&mixer_wasm)
+        .await?;
+    Ok(mixer_rcpt)
 }
 
 fn mixer_wasm_path() -> eyre::Result<PathBuf> {
