@@ -31,7 +31,9 @@ pub struct IMT {
     hasher: StorageAddress,
 }
 
-/* exposed methods */
+/* ======================================================================
+ *                               Contract
+ * ====================================================================== */
 #[cfg(feature = "contract")]
 #[public]
 impl IMT {

@@ -17,6 +17,9 @@ use stylus_sdk::prelude::*;
 #[storage]
 struct Poseidon;
 
+/* ======================================================================
+ *                               Contract
+ * ====================================================================== */
 #[cfg(feature = "contract")]
 #[public]
 impl Poseidon {
