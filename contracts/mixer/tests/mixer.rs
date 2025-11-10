@@ -1,7 +1,8 @@
 #![cfg(feature = "e2e")]
 
+use alloy::{eips::BlockId, providers::Provider, rpc::types::BlockTransactionsKind};
 use alloy_primitives::{uint, Address, FixedBytes, U256};
-use e2e::{constructor, Account};
+use e2e::{constructor, receipt, send, Account, Revert};
 use eyre::Result;
 use std::path::PathBuf;
 use std::process::Command;
@@ -32,8 +33,21 @@ async fn mixer_deposit_works(alice: Account) -> Result<()> {
         alloy::hex::encode(commitment.as_slice()),
     );
 
-    mixer.deposit(commitment).value(DENOMINATION).call().await?;
-    // TODO: assert
+    let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+
+    /* record timestamp right after the deposit */
+    let timestamp = U256::from(block_timestamp(&alice).await?);
+
+    let raw_log = rcpt.inner.as_receipt().unwrap().logs.first().unwrap();
+    let decoded = raw_log
+        .log_decode::<MixerAbi::Deposit>()
+        .expect("decode deposit event");
+
+    let event = &decoded.inner.data;
+    assert_eq!(event.commitment, commitment);
+    assert_eq!(event.timestamp, timestamp);
+    assert_eq!(event.index, 1u32);
+
     Ok(())
 }
 
@@ -59,8 +73,8 @@ async fn mixer_deposit_rejects_invalid_denomination(alice: Account) -> Result<()
     );
 
     /* call deposit with zero value -> expect revert */
-    mixer.deposit(commitment).value(U256::ZERO).call().await?;
-    // TODO: assert
+    let err = send!(mixer.deposit(commitment).value(U256::ZERO)).expect_err("should revert");
+    assert!(err.reverted_with(MixerAbi::InvalidDenomination {}));
     Ok(())
 }
 
@@ -85,9 +99,9 @@ async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()
         alloy::hex::encode(commitment.as_slice()),
     );
 
-    mixer.deposit(commitment).value(DENOMINATION).call().await?;
-    mixer.deposit(commitment).value(DENOMINATION).call().await?;
-    // TODO: assert
+    receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    let err = send!(mixer.deposit(commitment).value(DENOMINATION)).expect_err("should revert");
+    assert!(err.reverted_with(MixerAbi::CommitmentAlreadyExists {}));
     Ok(())
 }
 
@@ -215,4 +229,16 @@ fn repo_root() -> PathBuf {
         .and_then(|p| p.parent())
         .unwrap()
         .to_path_buf()
+}
+
+async fn block_timestamp(account: &Account) -> eyre::Result<u64> {
+    let timestamp = account
+        .wallet
+        .get_block(BlockId::latest(), BlockTransactionsKind::Hashes)
+        .await?
+        .expect("latest block should exist")
+        .header
+        .timestamp;
+
+    Ok(timestamp)
 }

@@ -19,7 +19,7 @@ use stylus_sdk::{
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 sol! {
-    event CommitmentInserted(uint32 indexed index);
+    event Deposit(bytes32 indexed commitment, uint32 index, uint256 timestamp);
     event Withdrawal(address indexed recipient, bytes32 indexed nullifier_hash);
 }
 
@@ -73,8 +73,10 @@ impl Mixer {
 
         log(
             self.vm(),
-            CommitmentInserted {
+            Deposit {
+                commitment: commitment,
                 index: inserted_index,
+                timestamp: U256::from(self.vm().block_timestamp()),
             },
         );
         Ok(())
