@@ -24,4 +24,4 @@ name = "stylus-mixer"
 path = "src/main.rs"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["lib", "cdylib"]

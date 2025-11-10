@@ -131,8 +131,7 @@ impl IMT {
         self.next_leaf_index.get()
     }
 
-    /* public pure */
-    fn zeros(i: U256) -> FixedBytes<32> {
+    fn zeros(&self, i: U256) -> FixedBytes<32> {
         let i_u32: u32 = {
             let bytes = i.to_be_bytes::<32>();
             u32::from_be_bytes([bytes[28], bytes[29], bytes[30], bytes[31]])

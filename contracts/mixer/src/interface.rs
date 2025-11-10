@@ -8,5 +8,9 @@ mod callable {
         interface IMixer {
             function deposit(bytes32 commitment) external;
         }
+
+        interface IVerifier {
+            function verify(bytes calldata _proof, bytes32[] calldata _public_inputs) external view returns (bool);
+        }
     }
 }
