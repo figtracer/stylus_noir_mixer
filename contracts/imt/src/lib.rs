@@ -1,9 +1,5 @@
-#![cfg_attr(not(any(test, feature = "export-abi")), no_std)]
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
-
-#[macro_use]
 extern crate alloc;
-use alloc::vec::Vec;
 
 pub mod interface;
 

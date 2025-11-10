@@ -1,7 +1,7 @@
 #![cfg(feature = "e2e")]
 
-use alloy_primitives::{hex, uint, Address, FixedBytes};
-use e2e::{constructor, receipt, Account};
+use alloy_primitives::{hex, uint, FixedBytes};
+use e2e::{constructor, Account};
 use eyre::Result;
 use std::path::PathBuf;
 use std::process::Command;
@@ -155,7 +155,7 @@ fn poseidon_wasm_path() -> eyre::Result<PathBuf> {
 
 fn generate_commitment_from_ts() -> eyre::Result<FixedBytes<32>> {
     let root = repo_root();
-    let script = root.join("contracts/js-scripts/generateCommitment.ts");
+    let script = root.join("scripts/js/generateCommitment.ts");
 
     let output = Command::new("npx")
         .args(["tsx", script.to_str().expect("valid script path")])
