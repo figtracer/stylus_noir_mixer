@@ -13,10 +13,13 @@ stylus-common = { path = "../common" }
 stylus-imt = { path = "../imt", default-features = false }
 
 [dev-dependencies]
-eyre.workspace = true
+e2e.workspace = true
 tokio.workspace = true
+eyre.workspace = true
+alloy.workspace = true
 
 [features]
+e2e = []
 export-abi = ["stylus-sdk/export-abi"]
 
 [[bin]]

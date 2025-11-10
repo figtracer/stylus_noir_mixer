@@ -3,9 +3,9 @@ extern crate alloc;
 
 pub mod interface;
 
-use crate::interface::IVerifier;
+use crate::interface::VerifierInterface;
 use stylus_common::errors::ContractErrors;
-use stylus_imt::interface::IIMT;
+use stylus_imt::interface::IMTInterface;
 
 use stylus_sdk::{
     abi::Bytes as AbiBytes,
@@ -67,7 +67,7 @@ impl Mixer {
 
         self.commitments.insert(commitment, true);
 
-        let inserted_index = IIMT::new(self.imt.get())
+        let inserted_index = IMTInterface::new(self.imt.get())
             .insert(Call::new(), commitment)
             .expect("insert call failed");
 
@@ -93,7 +93,7 @@ impl Mixer {
         }
 
         /* check if root is known */
-        let known = IIMT::new(self.imt.get())
+        let known = IMTInterface::new(self.imt.get())
             .is_known_root(Call::new(), root)
             .expect("isKnownRoot call failed");
         if !known {
@@ -109,7 +109,7 @@ impl Mixer {
         public_inputs.push(bytes_recipient);
 
         /* verify proof */
-        let verified = IVerifier::new(self.verifier.get())
+        let verified = VerifierInterface::new(self.verifier.get())
             .verify(
                 Call::new(),
                 AlloyBytes::copy_from_slice(proof.as_slice()),

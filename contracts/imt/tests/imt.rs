@@ -128,19 +128,9 @@ async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
     Ok(poseidon_rcpt)
 }
 
-fn repo_root() -> PathBuf {
-    /* contracts/imt -> project root */
-    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    crate_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .unwrap()
-        .to_path_buf()
-}
-
 fn poseidon_wasm_path() -> eyre::Result<PathBuf> {
     let root = repo_root();
-    let file = "openzeppelin_poseidon.wasm"; // cargo turns '-' into '_'
+    let file = "openzeppelin_poseidon.wasm";
     let path = root
         .join("contracts/poseidon/target/wasm32-unknown-unknown/release")
         .join(file);
@@ -187,4 +177,14 @@ fn generate_commitment_from_ts() -> eyre::Result<FixedBytes<32>> {
     };
 
     Ok(to_fb32(&bytes[0..32]))
+}
+
+fn repo_root() -> PathBuf {
+    /* contracts/imt -> project root */
+    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    crate_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap()
+        .to_path_buf()
 }
