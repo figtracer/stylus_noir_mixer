@@ -1,10 +1,10 @@
 #![cfg(feature = "e2e")]
 
 use alloy::{eips::BlockId, providers::Provider, rpc::types::BlockTransactionsKind};
-use alloy_primitives::{uint, Address, Bytes as AlloyBytes, FixedBytes, U256};
-use alloy_sol_types::SolValue;
+use alloy_primitives::{uint, Address, FixedBytes, U256};
 use e2e::{constructor, receipt, send, Account, Revert};
 use eyre::Result;
+use serde::Deserialize;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -28,7 +28,9 @@ async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
         alloy::hex::encode(secret.as_slice()),
     );
 
-    let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
+    let (proof, root, nullifier_hash) = generate_proof(nullifier, secret, recipient, leaves)?;
+    let recipient_word: FixedBytes<32> = recipient.into_word();
+    let public_inputs = vec![root, nullifier_hash, recipient_word];
     println!("public_inputs: {:?}", public_inputs);
     println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
     Ok(())
@@ -148,7 +150,6 @@ fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedB
 
     let s = String::from_utf8(output.stdout)?;
     let s = s.trim();
-    let s = s.strip_prefix("0x").unwrap_or(&s);
     let bytes = alloy::hex::decode(s)?;
 
     let mut a = [0u8; 32];
@@ -166,12 +167,21 @@ fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedB
     Ok((commitment, nullifier, secret))
 }
 
+/* generate proof */
+#[derive(Deserialize)]
+struct ProofResponse {
+    proof: String,
+    root: String,
+    #[serde(rename = "nullifierHash")]
+    nullifier_hash: String,
+}
+
 fn generate_proof(
     nullifier: FixedBytes<32>,
     secret: FixedBytes<32>,
     recipient: Address,
     leaves: Vec<FixedBytes<32>>,
-) -> eyre::Result<(Vec<u8>, Vec<FixedBytes<32>>)> {
+) -> eyre::Result<(Vec<u8>, FixedBytes<32>, FixedBytes<32>)> {
     let root = repo_root();
     let script = root.join("scripts/js/generateProof.ts");
 
@@ -186,22 +196,34 @@ fn generate_proof(
     for leaf in &leaves {
         args.push(leaf.to_string());
     }
-    println!("args: {:?}", args);
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
-
     let s = String::from_utf8(output.stdout)?;
+    let resp: ProofResponse = serde_json::from_str(s.trim())?;
+
+    let proof_bytes = hex_to_vec(&resp.proof)?;
+    let root = hex_to_fixed_bytes(&resp.root)?;
+    let nullifier_hash = hex_to_fixed_bytes(&resp.nullifier_hash)?;
+
+    Ok((proof_bytes, root, nullifier_hash))
+}
+
+fn hex_to_vec(s: &str) -> eyre::Result<Vec<u8>> {
     let s = s.trim();
-    let s = s.strip_prefix("0x").unwrap_or(&s);
-    let bytes = alloy::hex::decode(s)?;
+    let s = s.strip_prefix("0x").unwrap_or(s);
+    Ok(alloy::hex::decode(s)?)
+}
 
-    /* The returned hex string is encoded via `AbiCoder#encode(["bytes", "bytes32[]"], ...)`, which
-     * is a top-level encoding of two parameters, not a nested tuple. Therefore we must decode it
-     * with `inside_tuple = false` (see `SolValue::abi_decode` docs).
-     */
-    let (proof_bytes, public_inputs): (AlloyBytes, Vec<FixedBytes<32>>) =
-        <(AlloyBytes, Vec<FixedBytes<32>>)>::abi_decode(&bytes, false)?;
-
-    Ok((proof_bytes.to_vec(), public_inputs))
+fn hex_to_fixed_bytes(s: &str) -> eyre::Result<FixedBytes<32>> {
+    let bytes = hex_to_vec(s)?;
+    if bytes.len() != 32 {
+        return Err(eyre::eyre!(
+            "expected 32-byte value, got {} bytes for {s}",
+            bytes.len()
+        ));
+    }
+    let mut arr = [0u8; 32];
+    arr.copy_from_slice(&bytes);
+    Ok(FixedBytes::<32>::from(arr))
 }
 
 async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {

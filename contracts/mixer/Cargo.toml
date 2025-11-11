@@ -17,6 +17,8 @@ e2e.workspace = true
 tokio.workspace = true
 eyre.workspace = true
 alloy.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [features]
 e2e = []

@@ -41,15 +41,17 @@ export default async function generateProof() {
     };
     const { witness } = await noir.execute(input);
 
-    const { proof, publicInputs } = await honk.generateProof(witness, {
+    const { proof } = await honk.generateProof(witness, {
       keccak: true,
     });
 
-    const result = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["bytes", "bytes32[]"],
-      [proof, publicInputs]
-    );
-    return result;
+    const result = {
+      proof: ethers.hexlify(proof),
+      root: ethers.hexlify(merkleProof.root),
+      nullifierHash: ethers.hexlify(nullifierHash.toString()),
+    };
+
+    return JSON.stringify(result);
   } catch (error) {
     console.log(error);
     throw error;
