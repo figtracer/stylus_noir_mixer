@@ -28,11 +28,7 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
     let contract = IMTAbi::new(contract_addr, &alice.wallet);
 
     /* generate commitment */
-    let commitment = generate_commitment_from_ts()?;
-    println!(
-        "commitment: 0x{}",
-        alloy::hex::encode(commitment.as_slice()),
-    );
+    let (commitment, nullifier, secret) = generate_commitment()?;
 
     /* insert commitment */
     let IMTAbi::insertReturn { _0: index } = contract.insert(commitment).call().await?;
@@ -122,6 +118,44 @@ async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
+fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedBytes<32>)> {
+    let root = repo_root();
+    let script = root.join("scripts/js/generateCommitment.ts");
+    let output = Command::new("npx")
+        .args(["tsx", script.to_str().expect("valid script path")])
+        .current_dir(&root)
+        .output()?;
+
+    let s = String::from_utf8(output.stdout)?;
+    let s = s.trim();
+    let s = s.strip_prefix("0x").unwrap_or(&s);
+    let bytes = alloy::hex::decode(s)?;
+
+    let mut a = [0u8; 32];
+    a.copy_from_slice(&bytes[0..32]);
+    let commitment = FixedBytes::<32>::from(a);
+
+    let mut b = [0u8; 32];
+    b.copy_from_slice(&bytes[32..64]);
+    let nullifier = FixedBytes::<32>::from(b);
+
+    let mut c = [0u8; 32];
+    c.copy_from_slice(&bytes[64..96]);
+    let secret = FixedBytes::<32>::from(c);
+
+    Ok((commitment, nullifier, secret))
+}
+
+fn repo_root() -> PathBuf {
+    /* contracts/imt -> project root */
+    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    crate_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap()
+        .to_path_buf()
+}
+
 async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
     let poseidon_wasm = poseidon_wasm_path()?;
     let poseidon_rcpt = alice.as_deployer().deploy_wasm(&poseidon_wasm).await?;
@@ -141,50 +175,4 @@ fn poseidon_wasm_path() -> eyre::Result<PathBuf> {
         ));
     }
     Ok(path)
-}
-
-fn generate_commitment_from_ts() -> eyre::Result<FixedBytes<32>> {
-    let root = repo_root();
-    let script = root.join("scripts/js/generateCommitment.ts");
-
-    let output = Command::new("npx")
-        .args(["tsx", script.to_str().expect("valid script path")])
-        .current_dir(&root)
-        .output()?;
-
-    if !output.status.success() {
-        return Err(eyre::eyre!(
-            "commitment script failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-
-    let s = String::from_utf8(output.stdout)?;
-    let s = s.strip_prefix("0x").unwrap_or(&s);
-
-    let bytes = alloy::hex::decode(s)?;
-    if bytes.len() != 96 {
-        return Err(eyre::eyre!(
-            "unexpected commitment payload size: {} bytes",
-            bytes.len()
-        ));
-    }
-
-    let to_fb32 = |chunk: &[u8]| {
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(chunk);
-        FixedBytes::<32>::from(arr)
-    };
-
-    Ok(to_fb32(&bytes[0..32]))
-}
-
-fn repo_root() -> PathBuf {
-    /* contracts/imt -> project root */
-    let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    crate_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .unwrap()
-        .to_path_buf()
 }
