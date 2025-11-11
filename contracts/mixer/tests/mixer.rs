@@ -47,7 +47,6 @@ async fn mixer_deposit_works(alice: Account) -> Result<()> {
     assert_eq!(event.commitment, commitment);
     assert_eq!(event.timestamp, timestamp);
     assert_eq!(event.index, 1u32);
-
     Ok(())
 }
 
