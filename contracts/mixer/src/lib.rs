@@ -11,7 +11,6 @@ use stylus_sdk::{
     abi::Bytes as AbiBytes,
     alloy_primitives::{uint, Address, Bytes as AlloyBytes, FixedBytes, U256},
     alloy_sol_types::sol,
-    call::Call,
     prelude::*,
     storage::{StorageAddress, StorageBool, StorageGuard, StorageMap},
 };
@@ -61,7 +60,7 @@ impl Mixer {
         self.commitments.insert(commitment, true);
 
         let inserted_index = IMTInterface::new(self.imt.get())
-            .insert(Call::new(), commitment)
+            .insert(&mut *self, commitment)
             .expect("insert call failed");
 
         log(
@@ -89,7 +88,7 @@ impl Mixer {
 
         /* check if root is known */
         let known = IMTInterface::new(self.imt.get())
-            .is_known_root(Call::new(), root)
+            .is_known_root(&mut *self, root)
             .expect("isKnownRoot call failed");
         if !known {
             return Err(ContractErrors::invalid_root());
@@ -106,7 +105,7 @@ impl Mixer {
         /* verify proof */
         let verified = VerifierInterface::new(self.verifier.get())
             .verify(
-                Call::new(),
+                &mut *self,
                 AlloyBytes::copy_from_slice(proof.as_slice()),
                 public_inputs,
             )

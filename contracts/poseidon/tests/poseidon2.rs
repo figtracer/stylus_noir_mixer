@@ -32,16 +32,16 @@ async fn poseidon_known_vector(alice: Account) -> Result<()> {
     let contract = PoseidonAbi::new(contract_addr, &alice.wallet);
 
     let input_a = U256::from_be_slice(&hex!(
-        "1f8fb4ad3f03c2e36e1fcf77a43e41b55f01c37231981130f687b0019df78374"
+        "29f5cdf6eb8e04fd0f33b56f3c6bac311204572ba750cbeae363d2c6321dbb23"
     ));
     let input_b = U256::from_be_slice(&hex!(
-        "080104bc5c9cc4a6c922cf39f3a7f3e8820d988904094e3d5087c0bc3e93e3bc"
+        "1b1d665fb1656592e865b53c2e09b2d88000cb64bb86f09ccf85b75378b7fdf1"
     ));
 
     let PoseidonAbi::hashReturn { hash } = contract.hash([input_a, input_b]).call().await?;
 
     let expected = U256::from_be_slice(&hex!(
-        "083d10323077fed15f77b82c26a7f28ae8ce785a19716a26e2c96d695a8effae"
+        "0fc5f23f3d0c1c4d0c2723d576b84e883e1c4dad6325104f18572c1057017eeb"
     ));
 
     assert_eq!(hash, expected);

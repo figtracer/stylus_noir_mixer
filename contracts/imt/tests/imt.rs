@@ -13,7 +13,7 @@ mod abi;
 async fn imt_insert_works(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256)))
+        .with_constructor(constructor!(uint!(14_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -36,7 +36,7 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
 async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256)))
+        .with_constructor(constructor!(uint!(14_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -88,7 +88,7 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
 async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256)))
+        .with_constructor(constructor!(uint!(14_U256)))
         .deploy()
         .await?
         .contract_address;

@@ -3,13 +3,13 @@
 use alloy::{eips::BlockId, providers::Provider, rpc::types::BlockTransactionsKind};
 use alloy_primitives::{uint, Address, FixedBytes, U256};
 use e2e::{constructor, receipt, send, Account, Revert};
-use eyre::Result;
+use eyre::{Result, WrapErr};
 use serde::Deserialize;
-use std::path::PathBuf;
-use std::process::Command;
+use std::str::FromStr;
+use std::{path::PathBuf, process::Command};
 
 mod abi;
-use abi::MixerAbi;
+use abi::{IMTAbi, MixerAbi};
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
@@ -106,27 +106,33 @@ async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()
 #[e2e::test]
 async fn mixer_withdraw_works(alice: Account) -> Result<()> {
     let imt_addr = deploy_imt(&alice).await?.contract_address;
-    println!("imt deployed at: {imt_addr:?}");
-    let verifier_addr = Address::ZERO; /* not needed for deposit path */
-    println!("verifier deployed at: {verifier_addr:?}");
+    println!("IMT: {imt_addr:?}\n");
+    let verifier_addr = deploy_verifier()?;
+    println!("VERIFIER: {verifier_addr:?}\n");
     let mixer_addr = deploy_mixer(&alice, verifier_addr, imt_addr)
         .await?
         .contract_address;
-    println!("mixer deployed at: {mixer_addr:?}");
+    println!("MIXER: {mixer_addr:?}\n");
+
     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
+    let imt = IMTAbi::new(imt_addr, &alice.wallet);
 
     /* generate commitment */
     let (commitment, nullifier, secret) = generate_commitment()?;
+    println!("COMMITMENT: {commitment:?}\n");
+    println!("NULLIFIER: {nullifier:?}\n");
+    println!("SECRET: {secret:?}\n");
 
-    let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
     /* this is cheating a little bit because we're not actually using the merkle tree */
     let leaves = vec![commitment];
 
     /* generate proof */
     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
+    println!("PUBLIC INPUTS[0] (root): {:?}\n", public_inputs[0]);
 
-    let rcpt = receipt!(mixer.withdraw(
+    receipt!(mixer.withdraw(
         proof.into(),
         public_inputs[0],
         public_inputs[1],
@@ -137,7 +143,6 @@ async fn mixer_withdraw_works(alice: Account) -> Result<()> {
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
-/* generate proof */
 #[derive(Deserialize)]
 struct ProofResponse {
     proof: String,
@@ -190,6 +195,8 @@ fn generate_proof(
         args.push(leaf.to_string());
     }
 
+    println!("GENERATE PROOF ARGS: {:?}\n", args);
+
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
     let s = String::from_utf8(output.stdout)?;
     let resp: ProofResponse = serde_json::from_str(s.trim())?;
@@ -219,7 +226,7 @@ async fn deploy_imt(alice: &Account) -> Result<e2e::Receipt> {
     let imt_wasm = imt_wasm_path()?;
     let imt_rcpt = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256)))
+        .with_constructor(constructor!(uint!(14_U256)))
         .deploy_wasm(&imt_wasm)
         .await?;
     Ok(imt_rcpt)
@@ -277,4 +284,64 @@ async fn block_timestamp(account: &Account) -> eyre::Result<u64> {
         .timestamp;
 
     Ok(timestamp)
+}
+
+#[derive(Deserialize)]
+struct ForgeCreateOutput {
+    #[serde(rename = "deployedTo")]
+    deployed_to: String,
+}
+
+fn deploy_verifier() -> eyre::Result<Address> {
+    let root = repo_root();
+    let mixer_dir = root.join("contracts/mixer");
+
+    let status = Command::new("forge")
+        .args(["build", "--sizes"])
+        .current_dir(&mixer_dir)
+        .status()
+        .wrap_err("forge build failed")?;
+    if !status.success() {
+        return Err(eyre::eyre!(format!(
+            "forge build exited with status {status}"
+        )));
+    }
+
+    let output = Command::new("forge")
+        .args([
+            "create",
+            "src/Verifier.sol:HonkVerifier",
+            "--rpc-url",
+            "http://localhost:8547",
+            "--private-key",
+            "0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659",
+            "--broadcast",
+        ])
+        .current_dir(&mixer_dir)
+        .output()
+        .wrap_err("forge create failed")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(eyre::eyre!(format!(
+            "forge create failed with status {status}: {stderr}",
+            status = output.status
+        )));
+    }
+
+    let stdout = String::from_utf8(output.stdout)?;
+    let deployed_to = if let Ok(parsed) = serde_json::from_str::<ForgeCreateOutput>(stdout.trim()) {
+        parsed.deployed_to
+    } else {
+        stdout
+            .lines()
+            .find_map(|line| {
+                line.split_once("Deployed to:")
+                    .map(|(_, rhs)| rhs.trim().to_string())
+            })
+            .ok_or_else(|| eyre::eyre!("forge create output missing deployment address"))?
+    };
+
+    let address = Address::from_str(deployed_to.trim()).wrap_err("invalid verifier address")?;
+    Ok(address)
 }
