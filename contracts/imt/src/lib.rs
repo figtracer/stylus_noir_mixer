@@ -85,7 +85,7 @@ impl IMT {
             .set(current_hash);
 
         self.next_leaf_index.set(U32::from(next_idx_u32 + 1));
-        Ok(self.next_leaf_index.get())
+        Ok(U32::from(next_idx_u32))
     }
 
     fn is_known_root(&self, root: FixedBytes<32>) -> bool {

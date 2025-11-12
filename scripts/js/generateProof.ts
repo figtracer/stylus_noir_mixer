@@ -41,14 +41,26 @@ export default async function generateProof() {
     };
     const { witness } = await noir.execute(input);
 
-    const { proof } = await honk.generateProof(witness, {
+    const { proof, publicInputs } = await honk.generateProof(witness, {
       keccak: true,
     });
 
+    const toHexString = (value: string) => {
+      try {
+        return ethers.hexlify(Fr.fromString(value).toBuffer());
+      } catch {
+        return ethers.hexlify(ethers.getBytes(value));
+      }
+    };
+
+    const proofHex = ethers.hexlify(proof);
+    const publicInputsHex = publicInputs.map((value: string) =>
+      toHexString(value)
+    );
+
     const result = {
-      proof: ethers.hexlify(proof),
-      root: ethers.hexlify(merkleProof.root),
-      nullifierHash: ethers.hexlify(nullifierHash.toString()),
+      proof: proofHex,
+      publicInputs: publicInputsHex,
     };
 
     return JSON.stringify(result);

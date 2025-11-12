@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod abi;
-use abi::MixerAbi;
+use abi::{MixerAbi, PoseidonAbi};
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
@@ -19,20 +19,17 @@ const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 #[e2e::test]
 async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
     let (commitment, nullifier, secret) = generate_commitment()?;
+    println!(
+        "commitment: 0x{}",
+        alloy::hex::encode(commitment.as_slice())
+    );
+    println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
+    println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
     let leaves = vec![commitment];
     let recipient = alice.address();
-    println!(
-        "commitment: 0x{}\nnullifier: 0x{}\nsecret: 0x{}",
-        alloy::hex::encode(commitment.as_slice()),
-        alloy::hex::encode(nullifier.as_slice()),
-        alloy::hex::encode(secret.as_slice()),
-    );
-
-    let (proof, root, nullifier_hash) = generate_proof(nullifier, secret, recipient, leaves)?;
-    let recipient_word: FixedBytes<32> = recipient.into_word();
-    let public_inputs = vec![root, nullifier_hash, recipient_word];
-    println!("public_inputs: {:?}", public_inputs);
+    let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
     println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
+    println!("public_inputs: {:?}", public_inputs);
     Ok(())
 }
 /* ======================================================================
@@ -111,69 +108,90 @@ async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
  * ====================================================================== */
 // #[e2e::test]
 // async fn mixer_withdraw_works(alice: Account) -> Result<()> {
-//     /* deploy poseidon */
 //     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-//     /* deploy imt */
 //     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-//     /* deploy verifier */
 //     let verifier_addr = Address::ZERO; /* not needed for deposit path */
-//     /* deploy mixer */
 //     let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
 //         .await?
 //         .contract_address;
 //     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
 //     /* generate commitment */
-//     let (commitment, _nullifier, _secret) = generate_commitment()?;
+//     let (commitment, nullifier, secret) = generate_commitment()?;
+//     println!(
+//         "commitment: 0x{}",
+//         alloy::hex::encode(commitment.as_slice())
+//     );
+//     let poseidon = PoseidonAbi::new(poseidon_addr, &alice.wallet);
+//     let PoseidonAbi::hashReturn {
+//         hash: poseidon_commitment,
+//     } = poseidon
+//         .hash([u256_from_fb(nullifier), u256_from_fb(secret)])
+//         .call()
+//         .await?;
+//     let poseidon_commitment_fb = fb_from_u256(poseidon_commitment);
+//     println!(
+//         "commitment (poseidon contract): 0x{}",
+//         alloy::hex::encode(poseidon_commitment_fb.as_slice())
+//     );
+//     assert_eq!(poseidon_commitment_fb, commitment, "commitment mismatch");
+//     let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
-//     receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+//     println!(
+//         "commitment: 0x{}",
+//         alloy::hex::encode(commitment.as_slice())
+//     );
+//     println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
+//     println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
+
+//     /* this is cheating a little bit because we're not actually using the merkle tree */
+//     let leaves = vec![commitment];
+//     println!("leaves: {:?}", leaves);
 
 //     /* generate proof */
-//     let proof = generate_proof()?;
-//     println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()),);
-
-//     receipt!(mixer
-//         .withdraw(proof, commitment, nullifier_hash, alice.address)
-//         .value(DENOMINATION))?;
+//     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
+//     let rcpt = receipt!(mixer.withdraw(
+//         proof.into(),
+//         public_inputs[0],
+//         public_inputs[1],
+//         Address::from_word(public_inputs[2])
+//     ))?;
 //     Ok(())
 // }
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
-fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedBytes<32>)> {
-    let root = repo_root();
-    let script = root.join("scripts/js/generateCommitment.ts");
-    let output = Command::new("npx")
-        .args(["tsx", script.to_str().expect("valid script path")])
-        .current_dir(&root)
-        .output()?;
-
-    let s = String::from_utf8(output.stdout)?;
-    let s = s.trim();
-    let bytes = alloy::hex::decode(s)?;
-
-    let mut a = [0u8; 32];
-    a.copy_from_slice(&bytes[0..32]);
-    let commitment = FixedBytes::<32>::from(a);
-
-    let mut b = [0u8; 32];
-    b.copy_from_slice(&bytes[32..64]);
-    let nullifier = FixedBytes::<32>::from(b);
-
-    let mut c = [0u8; 32];
-    c.copy_from_slice(&bytes[64..96]);
-    let secret = FixedBytes::<32>::from(c);
-
-    Ok((commitment, nullifier, secret))
+#[derive(Deserialize)]
+struct CommitmentResponse {
+    commitment: String,
+    nullifier: String,
+    secret: String,
 }
 
 /* generate proof */
 #[derive(Deserialize)]
 struct ProofResponse {
     proof: String,
-    root: String,
-    #[serde(rename = "nullifierHash")]
-    nullifier_hash: String,
+    #[serde(rename = "publicInputs")]
+    public_inputs: Vec<String>,
+}
+
+fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedBytes<32>)> {
+    let root = repo_root();
+    let script = root.join("scripts/js/generateCommitment.ts");
+
+    let mut args: Vec<String> = vec![
+        "tsx".to_string(),
+        script.to_str().expect("valid script path").to_string(),
+    ];
+    let output = Command::new("npx").args(args).current_dir(&root).output()?;
+
+    let s = String::from_utf8(output.stdout)?;
+    let resp: CommitmentResponse = serde_json::from_str(s.trim())?;
+    let commitment = hex_to_fixed_bytes(&resp.commitment)?;
+    let nullifier = hex_to_fixed_bytes(&resp.nullifier)?;
+    let secret = hex_to_fixed_bytes(&resp.secret)?;
+    Ok((commitment, nullifier, secret))
 }
 
 fn generate_proof(
@@ -181,46 +199,41 @@ fn generate_proof(
     secret: FixedBytes<32>,
     recipient: Address,
     leaves: Vec<FixedBytes<32>>,
-) -> eyre::Result<(Vec<u8>, FixedBytes<32>, FixedBytes<32>)> {
+) -> eyre::Result<(Vec<u8>, Vec<FixedBytes<32>>)> {
     let root = repo_root();
     let script = root.join("scripts/js/generateProof.ts");
 
-    let recipient_word: FixedBytes<32> = recipient.into_word();
     let mut args: Vec<String> = vec![
         "tsx".to_string(),
         script.to_str().expect("valid script path").to_string(),
         nullifier.to_string(),
         secret.to_string(),
-        recipient_word.to_string(),
+        recipient.into_word().to_string(),
     ];
     for leaf in &leaves {
         args.push(leaf.to_string());
     }
+
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
     let s = String::from_utf8(output.stdout)?;
     let resp: ProofResponse = serde_json::from_str(s.trim())?;
+    let proof = hex_to_vec(&resp.proof)?;
+    let public_inputs = resp
+        .public_inputs
+        .into_iter()
+        .map(|s| hex_to_fixed_bytes(&s))
+        .collect::<eyre::Result<Vec<FixedBytes<32>>>>()?;
 
-    let proof_bytes = hex_to_vec(&resp.proof)?;
-    let root = hex_to_fixed_bytes(&resp.root)?;
-    let nullifier_hash = hex_to_fixed_bytes(&resp.nullifier_hash)?;
-
-    Ok((proof_bytes, root, nullifier_hash))
+    Ok((proof, public_inputs))
 }
 
 fn hex_to_vec(s: &str) -> eyre::Result<Vec<u8>> {
     let s = s.trim();
-    let s = s.strip_prefix("0x").unwrap_or(s);
     Ok(alloy::hex::decode(s)?)
 }
 
 fn hex_to_fixed_bytes(s: &str) -> eyre::Result<FixedBytes<32>> {
     let bytes = hex_to_vec(s)?;
-    if bytes.len() != 32 {
-        return Err(eyre::eyre!(
-            "expected 32-byte value, got {} bytes for {s}",
-            bytes.len()
-        ));
-    }
     let mut arr = [0u8; 32];
     arr.copy_from_slice(&bytes);
     Ok(FixedBytes::<32>::from(arr))
@@ -305,4 +318,12 @@ async fn block_timestamp(account: &Account) -> eyre::Result<u64> {
         .timestamp;
 
     Ok(timestamp)
+}
+
+fn u256_from_fb(fb: FixedBytes<32>) -> U256 {
+    U256::from_be_slice(fb.as_slice())
+}
+
+fn fb_from_u256(x: U256) -> FixedBytes<32> {
+    FixedBytes::<32>::from(x.to_be_bytes::<32>())
 }

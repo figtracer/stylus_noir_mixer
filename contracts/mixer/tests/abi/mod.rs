@@ -21,3 +21,10 @@ sol!(
         event Withdrawal(address indexed recipient, bytes32 indexed nullifier_hash);
     }
 );
+
+sol!(
+    #[sol(rpc)]
+    contract PoseidonAbi {
+        function hash(uint256[2] memory inputs) external view returns (uint256 hash);
+    }
+);
