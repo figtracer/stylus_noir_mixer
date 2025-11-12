@@ -9,29 +9,29 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod abi;
-use abi::{MixerAbi, PoseidonAbi};
+use abi::{IMTAbi, MixerAbi, PoseidonAbi};
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 /* ======================================================================
  *                      generate commmitment and proof
  * ====================================================================== */
-#[e2e::test]
-async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
-    let (commitment, nullifier, secret) = generate_commitment()?;
-    println!(
-        "commitment: 0x{}",
-        alloy::hex::encode(commitment.as_slice())
-    );
-    println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
-    println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
-    let leaves = vec![commitment];
-    let recipient = alice.address();
-    let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
-    println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
-    println!("public_inputs: {:?}", public_inputs);
-    Ok(())
-}
+// #[e2e::test]
+// async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
+//     let (commitment, nullifier, secret) = generate_commitment()?;
+//     println!(
+//         "commitment: 0x{}",
+//         alloy::hex::encode(commitment.as_slice())
+//     );
+//     println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
+//     println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
+//     let leaves = vec![commitment];
+//     let recipient = alice.address();
+//     let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
+//     println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
+//     println!("public_inputs: {:?}", public_inputs);
+//     Ok(())
+// }
 /* ======================================================================
  *                               deposit()
  * ====================================================================== */
@@ -106,68 +106,57 @@ async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
 /* ======================================================================
  *                               withdraw()
  * ====================================================================== */
-// #[e2e::test]
-// async fn mixer_withdraw_works(alice: Account) -> Result<()> {
-//     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-//     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-//     let verifier_addr = Address::ZERO; /* not needed for deposit path */
-//     let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
-//         .await?
-//         .contract_address;
-//     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
+#[e2e::test]
+async fn mixer_withdraw_works(alice: Account) -> Result<()> {
+    let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
+    println!("poseidon deployed at: {poseidon_addr:?}");
+    let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
+    println!("imt deployed at: {imt_addr:?}");
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    println!("verifier deployed at: {verifier_addr:?}");
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
+        .await?
+        .contract_address;
+    println!("mixer deployed at: {mixer_addr:?}");
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
-//     /* generate commitment */
-//     let (commitment, nullifier, secret) = generate_commitment()?;
-//     println!(
-//         "commitment: 0x{}",
-//         alloy::hex::encode(commitment.as_slice())
-//     );
-//     let poseidon = PoseidonAbi::new(poseidon_addr, &alice.wallet);
-//     let PoseidonAbi::hashReturn {
-//         hash: poseidon_commitment,
-//     } = poseidon
-//         .hash([u256_from_fb(nullifier), u256_from_fb(secret)])
-//         .call()
-//         .await?;
-//     let poseidon_commitment_fb = fb_from_u256(poseidon_commitment);
-//     println!(
-//         "commitment (poseidon contract): 0x{}",
-//         alloy::hex::encode(poseidon_commitment_fb.as_slice())
-//     );
-//     assert_eq!(poseidon_commitment_fb, commitment, "commitment mismatch");
-//     let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    /* generate commitment */
+    let (commitment, nullifier, secret) = generate_commitment()?;
+    println!(
+        "commitment: 0x{}",
+        alloy::hex::encode(commitment.as_slice())
+    );
+    println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
+    println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
 
-//     println!(
-//         "commitment: 0x{}",
-//         alloy::hex::encode(commitment.as_slice())
-//     );
-//     println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
-//     println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
+    let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
-//     /* this is cheating a little bit because we're not actually using the merkle tree */
-//     let leaves = vec![commitment];
-//     println!("leaves: {:?}", leaves);
+    /* this is cheating a little bit because we're not actually using the merkle tree */
+    let leaves = vec![commitment];
+    println!("leaves: {:?}", leaves);
 
-//     /* generate proof */
-//     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
-//     let rcpt = receipt!(mixer.withdraw(
-//         proof.into(),
-//         public_inputs[0],
-//         public_inputs[1],
-//         Address::from_word(public_inputs[2])
-//     ))?;
-//     Ok(())
-// }
+    /* generate proof */
+    let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
+    let contract = IMTAbi::new(imt_addr, &alice.wallet);
+    let IMTAbi::getRootFromRootIndexReturn { _0: root } =
+        contract.getRootFromRootIndex(0).call().await?;
+    let IMTAbi::getRootFromRootIndexReturn { _0: root1 } =
+        contract.getRootFromRootIndex(1).call().await?;
+    println!("root[0]: {root}");
+    println!("root[1]: {root1}");
+    println!("public_inputs[0]: {:?}", public_inputs[0]);
+
+    let rcpt = receipt!(mixer.withdraw(
+        proof.into(),
+        root,
+        public_inputs[1],
+        Address::from_word(public_inputs[2])
+    ))?;
+    Ok(())
+}
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
-#[derive(Deserialize)]
-struct CommitmentResponse {
-    commitment: String,
-    nullifier: String,
-    secret: String,
-}
-
 /* generate proof */
 #[derive(Deserialize)]
 struct ProofResponse {
@@ -185,12 +174,19 @@ fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedB
         script.to_str().expect("valid script path").to_string(),
     ];
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
-
     let s = String::from_utf8(output.stdout)?;
-    let resp: CommitmentResponse = serde_json::from_str(s.trim())?;
-    let commitment = hex_to_fixed_bytes(&resp.commitment)?;
-    let nullifier = hex_to_fixed_bytes(&resp.nullifier)?;
-    let secret = hex_to_fixed_bytes(&resp.secret)?;
+    let bytes = alloy::hex::decode(s)?;
+
+    let mut a = [0u8; 32];
+    a.copy_from_slice(&bytes[0..32]);
+    let commitment = FixedBytes::<32>::from(a);
+    let mut b = [0u8; 32];
+    b.copy_from_slice(&bytes[32..64]);
+    let nullifier = FixedBytes::<32>::from(b);
+    let mut c = [0u8; 32];
+    c.copy_from_slice(&bytes[64..96]);
+    let secret = FixedBytes::<32>::from(c);
+
     Ok((commitment, nullifier, secret))
 }
 
@@ -249,7 +245,7 @@ async fn deploy_imt(alice: &Account, poseidon_addr: Address) -> Result<e2e::Rece
     let imt_wasm = imt_wasm_path()?;
     let imt_rcpt = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(20_U256), poseidon_addr))
+        .with_constructor(constructor!(uint!(10_U256), poseidon_addr))
         .deploy_wasm(&imt_wasm)
         .await?;
     Ok(imt_rcpt)

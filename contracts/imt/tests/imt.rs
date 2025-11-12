@@ -28,7 +28,10 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
     let contract = IMTAbi::new(contract_addr, &alice.wallet);
 
     /* generate commitment */
-    let (commitment, _nullifier, _secret) = generate_commitment()?;
+    let (commitment, nullifier, secret) = generate_commitment()?;
+    println!("commitment: {commitment:?}");
+    println!("nullifier: {nullifier:?}");
+    println!("secret: {secret:?}");
 
     /* insert commitment */
     let IMTAbi::insertReturn { _0: index } = contract.insert(commitment).call().await?;

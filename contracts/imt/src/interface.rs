@@ -14,6 +14,7 @@ mod callable {
             function getDepth() external view returns (uint32);
             function getCurrentRootIndex() external view returns (uint32);
             function getNextLeafIndex() external view returns (uint32);
+            function getRootFromRootIndex(uint32 root_index) external view returns (bytes32);
         }
     }
 }

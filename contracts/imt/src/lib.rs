@@ -70,7 +70,6 @@ impl IMT {
                 left = self.cached_subtrees.getter(U32::from(i)).get();
                 right = current_hash;
             }
-
             current_hash = self.hash_pair(left, right);
             current_index >>= 1;
         }
@@ -127,6 +126,10 @@ impl IMT {
 
     fn get_next_leaf_index(&self) -> U32 {
         self.next_leaf_index.get()
+    }
+
+    fn get_root_from_root_index(&self, root_index: U32) -> FixedBytes<32> {
+        self.roots.getter(root_index).unwrap().get()
     }
 
     fn zeros(&self, i: U256) -> FixedBytes<32> {

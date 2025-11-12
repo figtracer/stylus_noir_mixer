@@ -9,8 +9,8 @@ fn main(
     nullifier: Field,
     secret: Field,
     /* the imt is going to have a depth of 20 in this case */
-    merkle_proof: [Field; 20],
-    is_even: [bool; 20],
+    merkle_proof: [Field; 10],
+    is_even: [bool; 10],
 ) {
     /* compute commitment (hash nullifier and secret) */
     let commitment: Field = poseidon2::Poseidon2::hash([nullifier, secret], 2);

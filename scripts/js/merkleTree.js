@@ -176,7 +176,7 @@ const ZERO_VALUES = [
 ];
 
 export async function merkleTree(leaves) {
-  const TREE_HEIGHT = 20;
+  const TREE_HEIGHT = 10;
   const tree = new PoseidonTree(TREE_HEIGHT, ZERO_VALUES);
 
   // Initialize tree with no leaves (all zeros)
