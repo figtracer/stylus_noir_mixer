@@ -1,8 +1,8 @@
 use poseidon::poseidon2;
 
-pub fn compute_merkle_root(leaf: Field, merkle_proof: [Field; 10], is_even: [bool; 10]) -> Field {
+pub fn compute_merkle_root(leaf: Field, merkle_proof: [Field; 15], is_even: [bool; 15]) -> Field {
     let mut hash: Field = leaf;
-    for i in 0..10 {
+    for i in 0..15 {
         let (left, right) = if is_even[i] {
             (hash, merkle_proof[i])
         } else {

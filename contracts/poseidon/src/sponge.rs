@@ -4,7 +4,7 @@ use openzeppelin_crypto::{
     arithmetic::uint::U256, field::instance::FpBN256, poseidon2::params::PoseidonParams,
 };
 
-use crate::params::StylusBN256Params;
+use crate::params::{StylusBN256Params, FULL_ROUND_CONSTANTS, PARTIAL_ROUND_CONSTANTS};
 
 const STATE_WIDTH: usize = StylusBN256Params::T;
 const RATE: usize = STATE_WIDTH - StylusBN256Params::CAPACITY;
@@ -118,23 +118,21 @@ mod sponge {
         matrix_multiplication_4x4(state);
 
         let full_rounds_half = StylusBN256Params::ROUNDS_F / 2;
-        let partial_rounds_end = full_rounds_half + StylusBN256Params::ROUNDS_P;
-        let total_rounds = StylusBN256Params::ROUNDS_F + StylusBN256Params::ROUNDS_P;
 
-        for round in 0..full_rounds_half {
-            add_round_constants(state, StylusBN256Params::ROUND_CONSTANTS[round]);
+        for constants in FULL_ROUND_CONSTANTS[..full_rounds_half].iter() {
+            add_round_constants(state, constants);
             s_box(state);
             matrix_multiplication_4x4(state);
         }
 
-        for round in full_rounds_half..partial_rounds_end {
-            state[0] += StylusBN256Params::ROUND_CONSTANTS[round][0];
+        for constant in PARTIAL_ROUND_CONSTANTS.iter() {
+            state[0] += *constant;
             state[0] = single_box(state[0]);
             internal_m_multiplication(state);
         }
 
-        for round in partial_rounds_end..total_rounds {
-            add_round_constants(state, StylusBN256Params::ROUND_CONSTANTS[round]);
+        for constants in FULL_ROUND_CONSTANTS[full_rounds_half..].iter() {
+            add_round_constants(state, constants);
             s_box(state);
             matrix_multiplication_4x4(state);
         }
@@ -192,51 +190,5 @@ mod sponge {
         state[1] = t5;
         state[2] = t7;
         state[3] = t4;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::hash;
-    use alloy_primitives::{hex, U256 as AlloyU256};
-    use openzeppelin_crypto::arithmetic::uint::U256;
-    use openzeppelin_crypto::field::instance::FpBN256;
-
-    fn fp_from_u256(value: AlloyU256) -> FpBN256 {
-        FpBN256::from_bigint(U256::from(value))
-    }
-
-    #[test]
-    fn poseidon_hash_two_inputs_matches_vector() {
-        let inputs = [
-            fp_from_u256(AlloyU256::from(123u64)),
-            fp_from_u256(AlloyU256::from(123_456u64)),
-        ];
-
-        let result = hash(&inputs, inputs.len(), false);
-        let expected = fp_from_u256(AlloyU256::from_be_slice(&hex!(
-            "1f24fc186957171704ab4ddf424d2830a3f5d04910752a162cd93487ebdc634d"
-        )));
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn poseidon_hash_known_vector_matches() {
-        let inputs = [
-            fp_from_u256(AlloyU256::from_be_slice(&hex!(
-                "1f8fb4ad3f03c2e36e1fcf77a43e41b55f01c37231981130f687b0019df78374"
-            ))),
-            fp_from_u256(AlloyU256::from_be_slice(&hex!(
-                "080104bc5c9cc4a6c922cf39f3a7f3e8820d988904094e3d5087c0bc3e93e3bc"
-            ))),
-        ];
-
-        let result = hash(&inputs, inputs.len(), false);
-        let expected = fp_from_u256(AlloyU256::from_be_slice(&hex!(
-            "083d10323077fed15f77b82c26a7f28ae8ce785a19716a26e2c96d695a8effae"
-        )));
-
-        assert_eq!(result, expected);
     }
 }

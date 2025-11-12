@@ -45,7 +45,7 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
     let IMTAbi::zerosReturn { z: z0 } = contract.zeros(uint!(0_U256)).call().await?;
     let IMTAbi::zerosReturn { z: z1 } = contract.zeros(uint!(1_U256)).call().await?;
     let IMTAbi::zerosReturn { z: z2 } = contract.zeros(uint!(2_U256)).call().await?;
-    let IMTAbi::zerosReturn { z: z31 } = contract.zeros(uint!(31_U256)).call().await?;
+    let IMTAbi::zerosReturn { z: z10 } = contract.zeros(uint!(10_U256)).call().await?;
 
     let e0 = {
         let mut arr = [0u8; 32];
@@ -68,10 +68,10 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
         ));
         FixedBytes::<32>::from(arr)
     };
-    let e31 = {
+    let e10 = {
         let mut arr = [0u8; 32];
         arr.copy_from_slice(&hex!(
-            "13b6403089d691e83af7392d8e9bddd76e83d8204b2475fc6c60679bd338dea8"
+            "26c093f627ffb8a25ab933cf64dd4f29dae2b103b48db3bf619f0dc39b298222"
         ));
         FixedBytes::<32>::from(arr)
     };
@@ -79,7 +79,7 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
     assert_eq!(z0, e0);
     assert_eq!(z1, e1);
     assert_eq!(z2, e2);
-    assert_eq!(z31, e31);
+    assert_eq!(z10, e10);
 
     Ok(())
 }

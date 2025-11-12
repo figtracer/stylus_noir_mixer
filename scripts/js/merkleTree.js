@@ -168,15 +168,10 @@ const ZERO_VALUES = [
   "0x06fa06667c34201bcd5f6334de6b8c0b22b5f6bc57e401ed7660c40afd880b26",
   "0x26ec3289eb146620b56807d58b3fae45adb7d7dfdc0a65194333e6dc2aa3de9e",
   "0x2d2f60a05d456896411242de0eff23497c889f762e2eb5db0a07df329f452a92",
-  "0x1ee903a4eac57310c624c0e30f2bd083eb68a595306df83b1111db0fffce45ea",
-  "0x05f96e491710c7e1d65207b36e0031c1de403eb32753de2489e8abce4c2e86ff",
-  "0x2375b170da8f212cf2b23538990cb6a2e319c50eee555a3fcbed25946326be6c",
-  "0x14307dca3f2b6224ff19c5c0a19129c5fa79d48c645ebb1c5302cb41a131e72a",
-  "0x051e91aeea86b05dcd2b5218126fb3cf3990c81d53f0947028a933026eb94b3a",
 ];
 
 export async function merkleTree(leaves) {
-  const TREE_HEIGHT = 10;
+  const TREE_HEIGHT = 15;
   const tree = new PoseidonTree(TREE_HEIGHT, ZERO_VALUES);
 
   // Initialize tree with no leaves (all zeros)

@@ -9,112 +9,107 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod abi;
-use abi::{IMTAbi, MixerAbi, PoseidonAbi};
+use abi::MixerAbi;
 
 const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 
 /* ======================================================================
  *                      generate commmitment and proof
  * ====================================================================== */
-// #[e2e::test]
-// async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
-//     let (commitment, nullifier, secret) = generate_commitment()?;
-//     println!(
-//         "commitment: 0x{}",
-//         alloy::hex::encode(commitment.as_slice())
-//     );
-//     println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
-//     println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
-//     let leaves = vec![commitment];
-//     let recipient = alice.address();
-//     let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
-//     println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
-//     println!("public_inputs: {:?}", public_inputs);
-//     Ok(())
-// }
+#[e2e::test]
+async fn generate_commitment_and_proof_works(alice: Account) -> Result<()> {
+    let (commitment, nullifier, secret) = generate_commitment()?;
+    println!(
+        "commitment: 0x{}",
+        alloy::hex::encode(commitment.as_slice())
+    );
+    println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
+    println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
+    let leaves = vec![commitment];
+    let recipient = alice.address();
+    let (proof, public_inputs) = generate_proof(nullifier, secret, recipient, leaves)?;
+    println!("proof: 0x{}", alloy::hex::encode(proof.as_slice()));
+    println!("public_inputs: {:?}", public_inputs);
+    Ok(())
+}
 /* ======================================================================
  *                               deposit()
  * ====================================================================== */
-// #[e2e::test]
-// async fn mixer_deposit_works(alice: Account) -> Result<()> {
-//     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-//     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-//     let verifier_addr = Address::ZERO; /* not needed for deposit path */
-//     let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
-//         .await?
-//         .contract_address;
-//     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
+#[e2e::test]
+async fn mixer_deposit_works(alice: Account) -> Result<()> {
+    let imt_addr = deploy_imt(&alice).await?.contract_address;
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, imt_addr)
+        .await?
+        .contract_address;
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
-//     /* generate commitment */
-//     let (commitment, _nullifier, _secret) = generate_commitment()?;
+    /* generate commitment */
+    let (commitment, _nullifier, _secret) = generate_commitment()?;
 
-//     let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
-//     /* record timestamp right after the deposit */
-//     let timestamp = U256::from(block_timestamp(&alice).await?);
+    /* record timestamp right after the deposit */
+    let timestamp = U256::from(block_timestamp(&alice).await?);
 
-//     let raw_log = rcpt.inner.as_receipt().unwrap().logs.first().unwrap();
-//     let decoded = raw_log
-//         .log_decode::<MixerAbi::Deposit>()
-//         .expect("decode deposit event");
+    let raw_log = rcpt.inner.as_receipt().unwrap().logs.first().unwrap();
+    let decoded = raw_log
+        .log_decode::<MixerAbi::Deposit>()
+        .expect("decode deposit event");
 
-//     let event = &decoded.inner.data;
-//     assert_eq!(event.commitment, commitment);
-//     assert_eq!(event.timestamp, timestamp);
-//     assert_eq!(event.index, 1u32);
-//     Ok(())
-// }
+    let event = &decoded.inner.data;
+    assert_eq!(event.commitment, commitment);
+    assert_eq!(event.timestamp, timestamp);
+    assert_eq!(event.index, 0u32);
+    Ok(())
+}
 
-// #[e2e::test]
-// async fn mixer_deposit_rejects_invalid_denomination(alice: Account) -> Result<()> {
-//     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-//     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-//     let verifier_addr = Address::ZERO; /* not needed for deposit path */
-//     let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
-//         .await?
-//         .contract_address;
-//     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
+#[e2e::test]
+async fn mixer_deposit_rejects_invalid_denomination(alice: Account) -> Result<()> {
+    let imt_addr = deploy_imt(&alice).await?.contract_address;
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, imt_addr)
+        .await?
+        .contract_address;
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
-//     /* generate commitment */
-//     let (commitment, _nullifier, _secret) = generate_commitment()?;
+    /* generate commitment */
+    let (commitment, _nullifier, _secret) = generate_commitment()?;
 
-//     /* call deposit with zero value -> expect revert */
-//     let err = send!(mixer.deposit(commitment).value(U256::ZERO)).expect_err("should revert");
-//     assert!(err.reverted_with(MixerAbi::InvalidDenomination {}));
-//     Ok(())
-// }
+    /* call deposit with zero value -> expect revert */
+    let err = send!(mixer.deposit(commitment).value(U256::ZERO)).expect_err("should revert");
+    assert!(err.reverted_with(MixerAbi::InvalidDenomination {}));
+    Ok(())
+}
 
-// #[e2e::test]
-// async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()> {
-//     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-//     let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
-//     let verifier_addr = Address::ZERO; /* not needed for deposit path */
-//     let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
-//         .await?
-//         .contract_address;
-//     let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
+#[e2e::test]
+async fn mixer_deposit_rejects_duplicate_commitment(alice: Account) -> Result<()> {
+    let imt_addr = deploy_imt(&alice).await?.contract_address;
+    let verifier_addr = Address::ZERO; /* not needed for deposit path */
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, imt_addr)
+        .await?
+        .contract_address;
+    let mixer = MixerAbi::new(mixer_addr, &alice.wallet);
 
-//     /* generate commitment */
-//     let (commitment, _nullifier, _secret) = generate_commitment()?;
+    /* generate commitment */
+    let (commitment, _nullifier, _secret) = generate_commitment()?;
 
-//     receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
-//     let err = send!(mixer.deposit(commitment).value(DENOMINATION)).expect_err("should revert");
-//     assert!(err.reverted_with(MixerAbi::CommitmentAlreadyExists {}));
-//     Ok(())
-// }
+    receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    let err = send!(mixer.deposit(commitment).value(DENOMINATION)).expect_err("should revert");
+    assert!(err.reverted_with(MixerAbi::CommitmentAlreadyExists {}));
+    Ok(())
+}
 
 /* ======================================================================
  *                               withdraw()
  * ====================================================================== */
 #[e2e::test]
 async fn mixer_withdraw_works(alice: Account) -> Result<()> {
-    let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
     let imt_addr = deploy_imt(&alice).await?.contract_address;
     println!("imt deployed at: {imt_addr:?}");
     let verifier_addr = Address::ZERO; /* not needed for deposit path */
     println!("verifier deployed at: {verifier_addr:?}");
-    let mixer_addr = deploy_mixer(&alice, verifier_addr, poseidon_addr, imt_addr)
+    let mixer_addr = deploy_mixer(&alice, verifier_addr, imt_addr)
         .await?
         .contract_address;
     println!("mixer deployed at: {mixer_addr:?}");
@@ -130,7 +125,6 @@ async fn mixer_withdraw_works(alice: Account) -> Result<()> {
 
     /* generate proof */
     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
-    let contract = IMTAbi::new(imt_addr, &alice.wallet);
 
     let rcpt = receipt!(mixer.withdraw(
         proof.into(),
@@ -221,12 +215,6 @@ fn hex_to_fixed_bytes(s: &str) -> eyre::Result<FixedBytes<32>> {
     Ok(FixedBytes::<32>::from(arr))
 }
 
-async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
-    let poseidon_wasm = poseidon_wasm_path()?;
-    let poseidon_rcpt = alice.as_deployer().deploy_wasm(&poseidon_wasm).await?;
-    Ok(poseidon_rcpt)
-}
-
 async fn deploy_imt(alice: &Account) -> Result<e2e::Receipt> {
     let imt_wasm = imt_wasm_path()?;
     let imt_rcpt = alice
@@ -240,13 +228,12 @@ async fn deploy_imt(alice: &Account) -> Result<e2e::Receipt> {
 async fn deploy_mixer(
     alice: &Account,
     verifier_addr: Address,
-    poseidon_addr: Address,
     imt_addr: Address,
 ) -> Result<e2e::Receipt> {
     let mixer_wasm = mixer_wasm_path()?;
     let mixer_rcpt = alice
         .as_deployer()
-        .with_constructor(constructor!(verifier_addr, poseidon_addr, imt_addr))
+        .with_constructor(constructor!(verifier_addr, imt_addr))
         .deploy_wasm(&mixer_wasm)
         .await?;
     Ok(mixer_rcpt)
@@ -257,16 +244,6 @@ fn mixer_wasm_path() -> eyre::Result<PathBuf> {
     let file = "stylus_mixer.wasm";
     let path = root
         .join("contracts/mixer/target/wasm32-unknown-unknown/release")
-        .join(file);
-    Ok(path)
-}
-
-/* get WASM paths */
-fn poseidon_wasm_path() -> eyre::Result<PathBuf> {
-    let root = repo_root();
-    let file = "openzeppelin_poseidon.wasm";
-    let path = root
-        .join("contracts/poseidon/target/wasm32-unknown-unknown/release")
         .join(file);
     Ok(path)
 }
@@ -300,12 +277,4 @@ async fn block_timestamp(account: &Account) -> eyre::Result<u64> {
         .timestamp;
 
     Ok(timestamp)
-}
-
-fn u256_from_fb(fb: FixedBytes<32>) -> U256 {
-    U256::from_be_slice(fb.as_slice())
-}
-
-fn fb_from_u256(x: U256) -> FixedBytes<32> {
-    FixedBytes::<32>::from(x.to_be_bytes::<32>())
 }

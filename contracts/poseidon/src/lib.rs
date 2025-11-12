@@ -32,6 +32,14 @@ impl Poseidon {
     }
 }
 
+/* =====================================================================
+ *                               Helpers
+ * ====================================================================== */
+pub fn hash_two_fixed_bytes(left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
+    let inputs = [fixed_bytes_to_fp(left), fixed_bytes_to_fp(right)];
+    fp_to_fixed_bytes(sponge::hash(&inputs, inputs.len(), false))
+}
+
 fn fixed_bytes_to_fp(value: FixedBytes<32>) -> FpBN256 {
     let mut bytes = [0u8; 32];
     bytes.copy_from_slice(value.as_slice());
@@ -47,9 +55,4 @@ fn fp_to_fixed_bytes(value: FpBN256) -> FixedBytes<32> {
         be_bytes[31 - i] = *byte;
     }
     FixedBytes::<32>::from(be_bytes)
-}
-
-pub fn hash_two_fixed_bytes(left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
-    let inputs = [fixed_bytes_to_fp(left), fixed_bytes_to_fp(right)];
-    fp_to_fixed_bytes(sponge::hash(&inputs, inputs.len(), false))
 }

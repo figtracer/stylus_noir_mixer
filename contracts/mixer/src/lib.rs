@@ -30,7 +30,6 @@ pub struct Mixer {
     nullifier_hashes: StorageMap<FixedBytes<32>, StorageBool>,
     imt: StorageAddress,
     verifier: StorageAddress,
-    hasher: StorageAddress,
 }
 
 /* ======================================================================
@@ -39,14 +38,8 @@ pub struct Mixer {
 #[public]
 impl Mixer {
     #[constructor]
-    fn initialize(
-        &mut self,
-        verifier: Address,
-        hasher: Address,
-        imt: Address,
-    ) -> Result<(), ContractErrors> {
+    fn initialize(&mut self, verifier: Address, imt: Address) -> Result<(), ContractErrors> {
         self.verifier.set(verifier);
-        self.hasher.set(hasher);
         self.imt.set(imt);
         Ok(())
     }
