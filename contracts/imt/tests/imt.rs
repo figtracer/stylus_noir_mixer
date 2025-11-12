@@ -11,20 +11,13 @@ mod abi;
 
 #[e2e::test]
 async fn imt_insert_works(alice: Account) -> Result<()> {
-    /* deploy poseidon */
-    let poseidon_rcpt = deploy_poseidon(&alice).await?;
-    let poseidon_addr = poseidon_rcpt.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
-
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(5_U256), poseidon_addr))
+        .with_constructor(constructor!(uint!(10_U256)))
         .deploy()
         .await?
         .contract_address;
-    println!(
-        "IMT deployed at: {contract_addr:?} with constructor: (uint!(5_U256), {poseidon_addr:?})"
-    );
+    println!("IMT deployed at: {contract_addr:?} with constructor: (uint!(5_U256))");
     let contract = IMTAbi::new(contract_addr, &alice.wallet);
 
     /* generate commitment */
@@ -41,14 +34,9 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
 
 #[e2e::test]
 async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
-    /* deploy poseidon */
-    let poseidon_rcpt = deploy_poseidon(&alice).await?;
-    let poseidon_addr = poseidon_rcpt.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
-
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(5_U256), poseidon_addr))
+        .with_constructor(constructor!(uint!(10_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -98,14 +86,9 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
 
 #[e2e::test]
 async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
-    /* deploy poseidon */
-    let poseidon_rcpt = deploy_poseidon(&alice).await?;
-    let poseidon_addr = poseidon_rcpt.contract_address;
-    println!("poseidon deployed at: {poseidon_addr:?}");
-
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(5_U256), poseidon_addr))
+        .with_constructor(constructor!(uint!(10_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -157,25 +140,4 @@ fn repo_root() -> PathBuf {
         .and_then(|p| p.parent())
         .unwrap()
         .to_path_buf()
-}
-
-async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
-    let poseidon_wasm = poseidon_wasm_path()?;
-    let poseidon_rcpt = alice.as_deployer().deploy_wasm(&poseidon_wasm).await?;
-    Ok(poseidon_rcpt)
-}
-
-fn poseidon_wasm_path() -> eyre::Result<PathBuf> {
-    let root = repo_root();
-    let file = "openzeppelin_poseidon.wasm";
-    let path = root
-        .join("contracts/poseidon/target/wasm32-unknown-unknown/release")
-        .join(file);
-    if !path.exists() {
-        return Err(eyre::eyre!(
-            "poseidon wasm not found at {}. run `npm run check:checks` first to build it.",
-            path.display()
-        ));
-    }
-    Ok(path)
 }

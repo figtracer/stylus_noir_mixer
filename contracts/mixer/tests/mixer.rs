@@ -110,7 +110,7 @@ const DENOMINATION: U256 = uint!(1_000_000_000_000_000_000_U256);
 async fn mixer_withdraw_works(alice: Account) -> Result<()> {
     let poseidon_addr = deploy_poseidon(&alice).await?.contract_address;
     println!("poseidon deployed at: {poseidon_addr:?}");
-    let imt_addr = deploy_imt(&alice, poseidon_addr).await?.contract_address;
+    let imt_addr = deploy_imt(&alice).await?.contract_address;
     println!("imt deployed at: {imt_addr:?}");
     let verifier_addr = Address::ZERO; /* not needed for deposit path */
     println!("verifier deployed at: {verifier_addr:?}");
@@ -122,33 +122,19 @@ async fn mixer_withdraw_works(alice: Account) -> Result<()> {
 
     /* generate commitment */
     let (commitment, nullifier, secret) = generate_commitment()?;
-    println!(
-        "commitment: 0x{}",
-        alloy::hex::encode(commitment.as_slice())
-    );
-    println!("nullifier: 0x{}", alloy::hex::encode(nullifier.as_slice()));
-    println!("secret: 0x{}", alloy::hex::encode(secret.as_slice()));
 
     let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
     /* this is cheating a little bit because we're not actually using the merkle tree */
     let leaves = vec![commitment];
-    println!("leaves: {:?}", leaves);
 
     /* generate proof */
     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
     let contract = IMTAbi::new(imt_addr, &alice.wallet);
-    let IMTAbi::getRootFromRootIndexReturn { _0: root } =
-        contract.getRootFromRootIndex(0).call().await?;
-    let IMTAbi::getRootFromRootIndexReturn { _0: root1 } =
-        contract.getRootFromRootIndex(1).call().await?;
-    println!("root[0]: {root}");
-    println!("root[1]: {root1}");
-    println!("public_inputs[0]: {:?}", public_inputs[0]);
 
     let rcpt = receipt!(mixer.withdraw(
         proof.into(),
-        root,
+        public_inputs[0],
         public_inputs[1],
         Address::from_word(public_inputs[2])
     ))?;
@@ -241,11 +227,11 @@ async fn deploy_poseidon(alice: &Account) -> Result<e2e::Receipt> {
     Ok(poseidon_rcpt)
 }
 
-async fn deploy_imt(alice: &Account, poseidon_addr: Address) -> Result<e2e::Receipt> {
+async fn deploy_imt(alice: &Account) -> Result<e2e::Receipt> {
     let imt_wasm = imt_wasm_path()?;
     let imt_rcpt = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(10_U256), poseidon_addr))
+        .with_constructor(constructor!(uint!(10_U256)))
         .deploy_wasm(&imt_wasm)
         .await?;
     Ok(imt_rcpt)

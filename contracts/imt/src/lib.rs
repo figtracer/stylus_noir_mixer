@@ -3,14 +3,13 @@ extern crate alloc;
 
 pub mod interface;
 
-use openzeppelin_poseidon::interface::PoseidonInterface as IPoseidon;
+use openzeppelin_poseidon::hash_two_fixed_bytes;
 
 use stylus_common::errors::ContractErrors;
 use stylus_sdk::{
-    alloy_primitives::{Address, FixedBytes, U256, U32},
-    call::Call,
+    alloy_primitives::{FixedBytes, U256, U32},
     prelude::*,
-    storage::{StorageAddress, StorageArray, StorageFixedBytes, StorageMap, StorageU32},
+    storage::{StorageArray, StorageFixedBytes, StorageMap, StorageU32},
 };
 
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
@@ -24,7 +23,6 @@ pub struct IMT {
     next_leaf_index: StorageU32,
     cached_subtrees: StorageMap<U32, StorageFixedBytes<32>>,
     roots: StorageArray<StorageFixedBytes<32>, 30>,
-    hasher: StorageAddress,
 }
 
 /* ======================================================================
@@ -34,7 +32,7 @@ pub struct IMT {
 #[public]
 impl IMT {
     #[constructor]
-    fn initialize(&mut self, depth: U32, hasher: Address) -> Result<(), ContractErrors> {
+    fn initialize(&mut self, depth: U32) -> Result<(), ContractErrors> {
         let d: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
         if d == 0 || d >= 32 {
             return Err(ContractErrors::invalid_depth());
@@ -44,7 +42,6 @@ impl IMT {
         self.next_leaf_index.set(U32::from(0u32));
         let init_root = Self::zeros_u32(d);
         self.roots.setter(U32::from(0u32)).unwrap().set(init_root);
-        self.hasher.set(hasher);
         Ok(())
     }
 
@@ -112,10 +109,6 @@ impl IMT {
     }
 
     /* getters */
-    fn get_hasher(&self) -> Address {
-        self.hasher.get()
-    }
-
     fn get_depth(&self) -> U32 {
         self.depth.get()
     }
@@ -147,14 +140,7 @@ impl IMT {
 #[cfg(feature = "contract")]
 impl IMT {
     fn hash_pair(&mut self, left: FixedBytes<32>, right: FixedBytes<32>) -> FixedBytes<32> {
-        let hasher = IPoseidon::new(self.hasher.get());
-        let out = hasher
-            .hash(
-                Call::new(),
-                [Self::u256_from_b32(left), Self::u256_from_b32(right)],
-            )
-            .expect("poseidon hash call failed");
-        Self::b32_from_u256(out)
+        hash_two_fixed_bytes(left, right)
     }
 
     fn zeros_u32(i: u32) -> FixedBytes<32> {
@@ -193,18 +179,6 @@ impl IMT {
             31 => Self::fb32("0x13b6403089d691e83af7392d8e9bddd76e83d8204b2475fc6c60679bd338dea8"),
             _ => panic!("index out of bounds"),
         }
-    }
-
-    /* FixedBytes<32> to u256 */
-    fn u256_from_b32(b: FixedBytes<32>) -> U256 {
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(b.as_slice());
-        U256::from_be_bytes(arr)
-    }
-
-    /* u256 to FixedBytes<32> */
-    fn b32_from_u256(x: U256) -> FixedBytes<32> {
-        FixedBytes::<32>::from(x.to_be_bytes::<32>())
     }
 
     /* hex literal to FixedBytes<32> */
