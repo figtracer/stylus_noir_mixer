@@ -123,14 +123,15 @@ async fn mixer_withdraw_works(alice: Account) -> Result<()> {
     println!("NULLIFIER: {nullifier:?}\n");
     println!("SECRET: {secret:?}\n");
 
-    receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
+    let rcpt = receipt!(mixer.deposit(commitment).value(DENOMINATION))?;
 
     /* this is cheating a little bit because we're not actually using the merkle tree */
     let leaves = vec![commitment];
 
     /* generate proof */
     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
-    println!("PUBLIC INPUTS[0] (root): {:?}\n", public_inputs[0]);
+    let IMTAbi::isKnownRootReturn { known } = imt.isKnownRoot(public_inputs[0]).call().await?;
+    assert!(known, "proof root not found in IMT");
 
     receipt!(mixer.withdraw(
         proof.into(),

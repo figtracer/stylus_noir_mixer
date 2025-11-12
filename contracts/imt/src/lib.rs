@@ -13,10 +13,10 @@ use stylus_sdk::{
 };
 
 /* constructor args */
-const ROOT_HISTORY_SIZE_U32: u32 = 15;
+const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
 #[cfg(feature = "contract")]
-const ZERO_LEAVES: [FixedBytes<32>; 15] = [
+const ZERO_LEAVES: [FixedBytes<32>; 16] = [
     fixed_bytes!("0x168db4aa1d4e4bf2ee46eb882e1c38a7de1a4da47e17b207a5494a14605ae38e"),
     fixed_bytes!("0x257a568bdc9cc663b2cf123f7d7b6c5eedd5a312d2792305352e09f1733a56b5"),
     fixed_bytes!("0x25b9b4ff326c7783ce7a3ae1503dce4552211bdfb510808e215f4227da087023"),
@@ -32,6 +32,7 @@ const ZERO_LEAVES: [FixedBytes<32>; 15] = [
     fixed_bytes!("0x0f9ba00d2e0001bed485a0a1c2416e1aa2c86bf7c859c6707d0169170678f174"),
     fixed_bytes!("0x06fa06667c34201bcd5f6334de6b8c0b22b5f6bc57e401ed7660c40afd880b26"),
     fixed_bytes!("0x26ec3289eb146620b56807d58b3fae45adb7d7dfdc0a65194333e6dc2aa3de9e"),
+    fixed_bytes!("0x2d2f60a05d456896411242de0eff23497c889f762e2eb5db0a07df329f452a92"),
 ];
 
 #[cfg(feature = "contract")]
@@ -54,7 +55,7 @@ impl IMT {
     #[constructor]
     fn initialize(&mut self, depth: U32) -> Result<(), ContractErrors> {
         let depth_u32: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
-        if depth_u32 == 0 || depth_u32 >= 15 {
+        if depth_u32 == 0 || depth_u32 >= 16 {
             return Err(ContractErrors::invalid_depth());
         }
         self.depth.set(depth);
