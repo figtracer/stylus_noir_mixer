@@ -4,9 +4,8 @@ extern crate alloc;
 pub mod interface;
 
 use crate::interface::VerifierInterface;
-use stylus_common::errors::ContractErrors;
+use stylus_common::errors::MixerErrors;
 use stylus_imt::interface::IMTInterface;
-
 use stylus_sdk::{
     abi::Bytes as AbiBytes,
     alloy_primitives::{uint, Address, Bytes as AlloyBytes, FixedBytes, U256},
@@ -37,24 +36,24 @@ pub struct Mixer {
 #[public]
 impl Mixer {
     #[constructor]
-    fn initialize(&mut self, verifier: Address, imt: Address) -> Result<(), ContractErrors> {
+    fn initialize(&mut self, verifier: Address, imt: Address) -> Result<(), MixerErrors> {
         self.verifier.set(verifier);
         self.imt.set(imt);
         Ok(())
     }
 
     #[payable]
-    fn deposit(&mut self, commitment: FixedBytes<32>) -> Result<(), ContractErrors> {
+    fn deposit(&mut self, commitment: FixedBytes<32>) -> Result<(), MixerErrors> {
         /* check if commitment is already present */
         let guard: StorageGuard<StorageBool> = self.commitments.getter(commitment);
         if guard.get() {
-            return Err(ContractErrors::commitment_already_exists());
+            return Err(MixerErrors::commitment_already_exists());
         }
 
         /* check if amount sent is the same as the denomination value for the mixer */
         let amount = self.vm().msg_value();
         if amount < DENOMINATION {
-            return Err(ContractErrors::invalid_denomination());
+            return Err(MixerErrors::invalid_denomination());
         }
 
         self.commitments.insert(commitment, true);
@@ -80,10 +79,10 @@ impl Mixer {
         root: FixedBytes<32>,
         nullifier_hash: FixedBytes<32>,
         recipient: Address,
-    ) -> Result<(), ContractErrors> {
+    ) -> Result<(), MixerErrors> {
         /* check if nullifier hash has already been used */
         if self.nullifier_hashes.getter(nullifier_hash).get() {
-            return Err(ContractErrors::nullifier_hash_already_used());
+            return Err(MixerErrors::nullifier_hash_already_used());
         }
 
         /* check if root is known */
@@ -91,7 +90,7 @@ impl Mixer {
             .is_known_root(&mut *self, root)
             .expect("isKnownRoot call failed");
         if !known {
-            return Err(ContractErrors::invalid_root());
+            return Err(MixerErrors::invalid_root());
         }
 
         let bytes_recipient: FixedBytes<32> = recipient.into_word();
@@ -111,7 +110,7 @@ impl Mixer {
             )
             .expect("verify call failed");
         if !verified {
-            return Err(ContractErrors::invalid_proof());
+            return Err(MixerErrors::invalid_proof());
         }
 
         /* insert nullifier hash */
@@ -120,7 +119,7 @@ impl Mixer {
         /* transfer funds to recipient */
         self.vm()
             .transfer_eth(recipient, DENOMINATION)
-            .map_err(|_| ContractErrors::invalid_denomination())?;
+            .map_err(|_| MixerErrors::invalid_denomination())?;
 
         log(
             self.vm(),

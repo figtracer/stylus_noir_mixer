@@ -1,8 +1,9 @@
 [package]
 name = "openzeppelin-poseidon"
+authors = ["openzeppelin"]
 edition.workspace = true
 license.workspace = true
-version = "0.0.1"
+version = "0.1.0"
 
 [dependencies]
 openzeppelin-crypto.workspace = true

@@ -3,8 +3,8 @@
 use alloy_primitives::{hex, uint, FixedBytes};
 use e2e::{constructor, Account};
 use eyre::Result;
-use std::path::PathBuf;
-use std::process::Command;
+use serde::Deserialize;
+use std::{path::PathBuf, process::Command};
 
 use crate::abi::IMTAbi;
 mod abi;
@@ -104,6 +104,13 @@ async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
 /* ======================================================================
  *                               INTERNAL HELPERS
  * ====================================================================== */
+#[derive(Deserialize)]
+struct CommitmentResponse {
+    commitment: String,
+    nullifier: String,
+    secret: String,
+}
+
 fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedBytes<32>)> {
     let root = repo_root();
     let script = root.join("scripts/js/generateCommitment.ts");
@@ -113,23 +120,21 @@ fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedB
         .output()?;
 
     let s = String::from_utf8(output.stdout)?;
-    let s = s.trim();
-    let s = s.strip_prefix("0x").unwrap_or(&s);
-    let bytes = alloy::hex::decode(s)?;
-
-    let mut a = [0u8; 32];
-    a.copy_from_slice(&bytes[0..32]);
-    let commitment = FixedBytes::<32>::from(a);
-
-    let mut b = [0u8; 32];
-    b.copy_from_slice(&bytes[32..64]);
-    let nullifier = FixedBytes::<32>::from(b);
-
-    let mut c = [0u8; 32];
-    c.copy_from_slice(&bytes[64..96]);
-    let secret = FixedBytes::<32>::from(c);
+    let resp: CommitmentResponse = serde_json::from_str(&s)?;
+    let commitment = hex_to_fixed_bytes(&resp.commitment)?;
+    let nullifier = hex_to_fixed_bytes(&resp.nullifier)?;
+    let secret = hex_to_fixed_bytes(&resp.secret)?;
 
     Ok((commitment, nullifier, secret))
+}
+
+fn hex_to_fixed_bytes(s: &str) -> eyre::Result<FixedBytes<32>> {
+    let bytes = alloy::hex::decode(s)?;
+    let arr: [u8; 32] = bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| eyre::eyre!("expected 32-byte hex string"))?;
+    Ok(FixedBytes::<32>::from(arr))
 }
 
 fn repo_root() -> PathBuf {

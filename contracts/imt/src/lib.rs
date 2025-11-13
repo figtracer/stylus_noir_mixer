@@ -4,8 +4,7 @@ extern crate alloc;
 pub mod interface;
 
 use openzeppelin_poseidon::hash_two_fixed_bytes;
-
-use stylus_common::errors::ContractErrors;
+use stylus_common::errors::ImtErrors;
 use stylus_sdk::{
     alloy_primitives::{fixed_bytes, FixedBytes, U256, U32},
     prelude::*,
@@ -15,7 +14,6 @@ use stylus_sdk::{
 /* constructor args */
 const ROOT_HISTORY_SIZE_U32: u32 = 30;
 
-#[cfg(feature = "contract")]
 const ZERO_LEAVES: [FixedBytes<32>; 16] = [
     fixed_bytes!("0x168db4aa1d4e4bf2ee46eb882e1c38a7de1a4da47e17b207a5494a14605ae38e"),
     fixed_bytes!("0x257a568bdc9cc663b2cf123f7d7b6c5eedd5a312d2792305352e09f1733a56b5"),
@@ -53,10 +51,10 @@ pub struct IMT {
 #[public]
 impl IMT {
     #[constructor]
-    fn initialize(&mut self, depth: U32) -> Result<(), ContractErrors> {
+    fn initialize(&mut self, depth: U32) -> Result<(), ImtErrors> {
         let depth_u32: u32 = u32::from_be_bytes(depth.to_be_bytes::<4>());
         if depth_u32 == 0 || depth_u32 >= 16 {
-            return Err(ContractErrors::invalid_depth());
+            return Err(ImtErrors::invalid_depth());
         }
         self.depth.set(depth);
         self.current_root_index.set(U32::from(0u32));
@@ -67,12 +65,12 @@ impl IMT {
         Ok(())
     }
 
-    fn insert(&mut self, leaf: FixedBytes<32>) -> Result<U32, ContractErrors> {
+    fn insert(&mut self, leaf: FixedBytes<32>) -> Result<U32, ImtErrors> {
         let depth_u32: u32 = u32::from_be_bytes(self.depth.get().to_be_bytes::<4>());
         let next_idx_u32: u32 = u32::from_be_bytes(self.next_leaf_index.get().to_be_bytes::<4>());
         let capacity: u64 = 1u64 << depth_u32;
         if (next_idx_u32 as u64) == capacity {
-            return Err(ContractErrors::tree_is_full());
+            return Err(ImtErrors::tree_is_full());
         }
 
         let mut current_index: u32 = next_idx_u32;
@@ -106,9 +104,10 @@ impl IMT {
         Ok(U32::from(next_idx_u32))
     }
 
-    fn is_known_root(&self, root: FixedBytes<32>) -> bool {
+    /* GETTERS/VIEW FUNCTIONS */
+    fn is_known_root(&self, root: FixedBytes<32>) -> Result<bool, ImtErrors> {
         if root == FixedBytes::<32>::ZERO {
-            return false;
+            return Ok(false);
         }
 
         let current_root_index_u32: u32 =
@@ -117,7 +116,7 @@ impl IMT {
         loop {
             let guard = self.roots.getter(U32::from(i)).unwrap();
             if guard.get() == root {
-                return true;
+                return Ok(true);
             }
             if i == 0 {
                 i = ROOT_HISTORY_SIZE_U32;
@@ -127,7 +126,7 @@ impl IMT {
                 break;
             }
         }
-        false
+        Ok(false)
     }
 
     fn zeros(&self, i: U256) -> FixedBytes<32> {
@@ -141,7 +140,6 @@ impl IMT {
         Self::zeros_u32(index)
     }
 
-    /* getters */
     fn get_depth(&self) -> U32 {
         self.depth.get()
     }
@@ -160,7 +158,7 @@ impl IMT {
 }
 
 /* ======================================================================
- *                               INTERNAL HELPERS
+ *                         CONTRACT INTERNAL
  * ====================================================================== */
 #[cfg(feature = "contract")]
 impl IMT {

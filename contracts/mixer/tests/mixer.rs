@@ -152,6 +152,13 @@ struct ProofResponse {
     public_inputs: Vec<String>,
 }
 
+#[derive(Deserialize)]
+struct CommitmentResponse {
+    commitment: String,
+    nullifier: String,
+    secret: String,
+}
+
 fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedBytes<32>)> {
     let root = repo_root();
     let script = root.join("scripts/js/generateCommitment.ts");
@@ -162,17 +169,10 @@ fn generate_commitment() -> eyre::Result<(FixedBytes<32>, FixedBytes<32>, FixedB
     ];
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
     let s = String::from_utf8(output.stdout)?;
-    let bytes = alloy::hex::decode(s)?;
-
-    let mut a = [0u8; 32];
-    a.copy_from_slice(&bytes[0..32]);
-    let commitment = FixedBytes::<32>::from(a);
-    let mut b = [0u8; 32];
-    b.copy_from_slice(&bytes[32..64]);
-    let nullifier = FixedBytes::<32>::from(b);
-    let mut c = [0u8; 32];
-    c.copy_from_slice(&bytes[64..96]);
-    let secret = FixedBytes::<32>::from(c);
+    let resp: CommitmentResponse = serde_json::from_str(s.trim())?;
+    let commitment = hex_to_fixed_bytes(&resp.commitment)?;
+    let nullifier = hex_to_fixed_bytes(&resp.nullifier)?;
+    let secret = hex_to_fixed_bytes(&resp.secret)?;
 
     Ok((commitment, nullifier, secret))
 }
@@ -201,19 +201,18 @@ fn generate_proof(
 
     let output = Command::new("npx").args(args).current_dir(&root).output()?;
     let s = String::from_utf8(output.stdout)?;
-    let resp: ProofResponse = serde_json::from_str(s.trim())?;
+    let resp: ProofResponse = serde_json::from_str(&s)?;
     let proof = hex_to_vec(&resp.proof)?;
     let public_inputs = resp
         .public_inputs
-        .into_iter()
-        .map(|s| hex_to_fixed_bytes(&s))
-        .collect::<eyre::Result<Vec<FixedBytes<32>>>>()?;
+        .iter()
+        .map(|s| hex_to_fixed_bytes(s))
+        .collect::<eyre::Result<Vec<_>>>()?;
 
     Ok((proof, public_inputs))
 }
 
 fn hex_to_vec(s: &str) -> eyre::Result<Vec<u8>> {
-    let s = s.trim();
     Ok(alloy::hex::decode(s)?)
 }
 

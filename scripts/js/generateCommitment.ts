@@ -7,12 +7,15 @@ export default async function generateCommitment(): Promise<string> {
   const secret = Fr.random();
   const commitment: Fr = await bb.poseidon2Hash([nullifier, secret]);
 
-  const result = ethers.AbiCoder.defaultAbiCoder().encode(
-    ["bytes32", "bytes32", "bytes32"],
-    [commitment.toBuffer(), nullifier.toBuffer(), secret.toBuffer()]
-  );
+  const toHexString = (fr: Fr) => ethers.hexlify(fr.toBuffer());
 
-  return result;
+  const result = {
+    commitment: toHexString(commitment),
+    nullifier: toHexString(nullifier),
+    secret: toHexString(secret),
+  };
+
+  return JSON.stringify(result);
 }
 
 (async () => {

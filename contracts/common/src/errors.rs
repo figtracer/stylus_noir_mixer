@@ -16,9 +16,23 @@ sol! {
 }
 
 #[derive(SolidityError)]
-pub enum ContractErrors {
+pub enum ImtErrors {
     InvalidDepth(InvalidDepth),
     TreeIsFull(TreeIsFull),
+}
+
+impl ImtErrors {
+    pub fn invalid_depth() -> Self {
+        Self::InvalidDepth(InvalidDepth {})
+    }
+
+    pub fn tree_is_full() -> Self {
+        Self::TreeIsFull(TreeIsFull {})
+    }
+}
+
+#[derive(SolidityError)]
+pub enum MixerErrors {
     CommitmentAlreadyExists(CommitmentAlreadyExists),
     InvalidDenomination(InvalidDenomination),
     NullifierHashAlreadyUsed(NullifierHashAlreadyUsed),
@@ -26,25 +40,23 @@ pub enum ContractErrors {
     InvalidProof(InvalidProof),
 }
 
-impl ContractErrors {
-    pub fn invalid_depth() -> Self {
-        Self::InvalidDepth(InvalidDepth {})
-    }
-    pub fn tree_is_full() -> Self {
-        Self::TreeIsFull(TreeIsFull {})
-    }
+impl MixerErrors {
     pub fn commitment_already_exists() -> Self {
         Self::CommitmentAlreadyExists(CommitmentAlreadyExists {})
     }
+
     pub fn invalid_denomination() -> Self {
         Self::InvalidDenomination(InvalidDenomination {})
     }
+
     pub fn nullifier_hash_already_used() -> Self {
         Self::NullifierHashAlreadyUsed(NullifierHashAlreadyUsed {})
     }
+
     pub fn invalid_root() -> Self {
         Self::InvalidRoot(InvalidRoot {})
     }
+
     pub fn invalid_proof() -> Self {
         Self::InvalidProof(InvalidProof {})
     }
