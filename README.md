@@ -1,6 +1,6 @@
 ## stylus_mixer
 
-> Since the verifier is a huge Solidity file, 75% of the project is written in Solidity but you get the point. Might be broken somewhere.
+> Since the verifier is a huge Solidity file, 50% of the project is written in Solidity but you get the point. Might be broken somewhere.
 
 Zero-knowledge mixer written in Rust using Arbitrum Stylus SDK
 
