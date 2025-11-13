@@ -19,7 +19,6 @@ export default async function generateProof() {
 
   const nullifier = Fr.fromString(inputs[0]);
   const secret = Fr.fromString(inputs[1]);
-
   const nullifierHash = await bb.poseidon2Hash([nullifier]);
   const leaves = inputs.slice(3);
 

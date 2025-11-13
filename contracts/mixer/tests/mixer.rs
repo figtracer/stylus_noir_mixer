@@ -130,6 +130,7 @@ async fn mixer_withdraw_works(alice: Account) -> Result<()> {
 
     /* generate proof */
     let (proof, public_inputs) = generate_proof(nullifier, secret, alice.address(), leaves)?;
+
     let IMTAbi::isKnownRootReturn { known } = imt.isKnownRoot(public_inputs[0]).call().await?;
     assert!(known, "proof root not found in IMT");
 
@@ -227,7 +228,7 @@ async fn deploy_imt(alice: &Account) -> Result<e2e::Receipt> {
     let imt_wasm = imt_wasm_path()?;
     let imt_rcpt = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(14_U256)))
+        .with_constructor(constructor!(uint!(15_U256)))
         .deploy_wasm(&imt_wasm)
         .await?;
     Ok(imt_rcpt)

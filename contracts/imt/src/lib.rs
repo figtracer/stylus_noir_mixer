@@ -43,7 +43,7 @@ pub struct IMT {
     current_root_index: StorageU32,
     next_leaf_index: StorageU32,
     cached_subtrees: StorageMap<U32, StorageFixedBytes<32>>,
-    roots: StorageArray<StorageFixedBytes<32>, 15>,
+    roots: StorageArray<StorageFixedBytes<32>, 30>,
 }
 
 /* ======================================================================
