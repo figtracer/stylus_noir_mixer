@@ -13,22 +13,18 @@ mod abi;
 async fn imt_insert_works(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(14_U256)))
+        .with_constructor(constructor!(uint!(15_U256)))
         .deploy()
         .await?
         .contract_address;
-    println!("IMT deployed at: {contract_addr:?} with constructor: (uint!(5_U256))");
     let contract = IMTAbi::new(contract_addr, &alice.wallet);
 
     /* generate commitment */
     let (commitment, nullifier, secret) = generate_commitment()?;
-    println!("commitment: {commitment:?}");
-    println!("nullifier: {nullifier:?}");
-    println!("secret: {secret:?}");
 
     /* insert commitment */
     let IMTAbi::insertReturn { _0: index } = contract.insert(commitment).call().await?;
-    println!("insert tx succeeded. nextLeafIndex: {index:?}");
+    assert_eq!(index, 0);
     Ok(())
 }
 
@@ -36,7 +32,7 @@ async fn imt_insert_works(alice: Account) -> Result<()> {
 async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(14_U256)))
+        .with_constructor(constructor!(uint!(15_U256)))
         .deploy()
         .await?
         .contract_address;
@@ -88,7 +84,7 @@ async fn imt_zeros_match_constants(alice: Account) -> Result<()> {
 async fn imt_is_known_root_zero_is_false(alice: Account) -> Result<()> {
     let contract_addr = alice
         .as_deployer()
-        .with_constructor(constructor!(uint!(14_U256)))
+        .with_constructor(constructor!(uint!(15_U256)))
         .deploy()
         .await?
         .contract_address;
