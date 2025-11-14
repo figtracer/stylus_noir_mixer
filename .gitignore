@@ -12,3 +12,4 @@ Cargo.lock
 /contracts/mixer/out
 /contracts/mixer/cache
 /cache
+/contracts/mixer/src/Verifier.sol
